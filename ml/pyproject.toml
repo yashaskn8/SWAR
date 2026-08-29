@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["app*", "evaluation*", "training*"]
+include = ["app*", "baselines*", "evaluation*", "training*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers -q"

@@ -198,3 +198,20 @@ Phase L implements deterministic, versioned, quality-aware audio transformations
 | Golden decoding, malformed-input bounds, exact timing, quality edges, no runtime disk write, error cleanup, and recipe determinism | [Phase L audio tests](../../ml/tests/unit/audio/) | FR-QUAL-001..004, NFR-REL-001, NFR-PRIV-002; AC-ML-004 |
 
 Concrete command outcomes are recorded in [Phase L exit-gate evidence](../implementation/phase-status.md#phase-l-exit-gate-evidence).
+
+## 12. Phase M baseline and development-loop evidence
+
+Phase M proves the authenticated technical-evidence loop and a reproducible, claim-safe baseline
+harness without adding real model adapters, scientific results, business risk policy, or frontend
+code.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| Dual-gated deterministic stub, production startup rejection, persistent provider/scenario/non-scientific labels | [`DevelopmentStub`](../../ml/app/inference/development_stub.py) and [headless loop contract](../implementation/mvp-2-loop.md) | NFR-SEC-003, FR-API-004, MLR-SAFE-001; Phase M stub gate |
+| Authenticated callback, exact Phase J aliases, event-ID idempotency, bounded retry, and safe errors | [`BackendEvidenceCallbackClient`](../../ml/app/inference/development_stub.py) and [ML integration tests](../../ml/tests/integration/test_backend_evidence_loop.py) | FR-API-004..005, NFR-SEC-001..003, NFR-REL-002; AC-RISK-005, AC-RISK-007 |
+| Headless NestJS FAST/DEEP/insufficient/error ingestion, binding, replay/conflict, and stale behavior | [Backend loop test](../../backend/tests/integration/analysis/stub-evidence-loop.spec.ts) | FR-CALL-005..006, FR-QUAL-002, FR-RISK-004, FR-AUD-001..003; AC-ML-004, AC-RISK-005 |
+| Deterministic spectral features and uncalibrated logistic decision scores | [`spectral_baseline.py`](../../ml/baselines/spectral_baseline.py) and [baseline protocol](../evaluation/baseline-protocol.md) | MLR-GOV-002, MLR-SPOOF-001, MLR-CAL-001; AC-ML-003, AC-ML-007 |
+| Governed source/file/split/leakage gate and Phase L preprocessing provenance | [`run_baseline.py`](../../ml/baselines/run_baseline.py) | MLR-GOV-001..002, MLR-OOD-001, NFR-PRIV-002; AC-ML-005, AC-ML-008 |
+| Schema-enforced metric-free blocker and reproducible Phase O-compatible records | [`result_schema.py`](../../ml/evaluation/result_schema.py) and [baseline tests](../../ml/tests/unit/baselines/) | MLR-SPOOF-001, MLR-OOD-001; AC-A-002, AC-ML-007..008 |
+
+Concrete command outcomes are recorded in [Phase M exit-gate evidence](../implementation/phase-status.md#phase-m-exit-gate-evidence).
