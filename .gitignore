@@ -52,6 +52,17 @@ local.properties
 *.safetensors
 **/checkpoints/
 
+# Governed ML datasets remain outside Git
+ml/data/raw/
+ml/data/acquired/
+ml/data/derived/
+ml/data/cache/
+ml/data/**/*.zip
+ml/data/**/*.tar
+ml/data/**/*.tar.gz
+ml/data/**/*.tgz
+ml/data/**/*.parquet
+
 # Local databases, process state, logs, and editor files
 *.db
 *.sqlite

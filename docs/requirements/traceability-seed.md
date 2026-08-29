@@ -167,3 +167,19 @@ Phase J turns the Phase I workflows into versioned, authenticated transport adap
 | Snapshot/reference/schema/enum/auth/binding/replay drift verification | [Phase J contract tests](../../backend/tests/contract/) | FR-API-001..005, NFR-COMP-002, NFR-SEC-001..003; AC-RISK-007 |
 
 Concrete command outcomes are recorded in [Phase J exit-gate evidence](../implementation/phase-status.md#phase-j-exit-gate-evidence).
+
+## 10. Phase K data-governance evidence
+
+Phase K establishes reproducible source, license, provenance, manifest, and split controls without acquiring audio or implementing Phase L preprocessing.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| Official candidate inventory, license/terms status, permitted role, redistribution, access mode, and blockers | [Source register](../../ml/data/manifests/source-register.yaml) and [license protocol](../../ml/data/licenses/README.md) | MLR-GOV-001, NFR-PRIV-001, NFR-SEC-003; AC-ML-005 |
+| Stable sample IDs, hashes, source/version, speaker/group, labels, generator, language/accent status, lineage, consent/rights basis, and split | [Manifest schema](../../ml/data/manifests/schema.json) and [fictional example](../../ml/data/manifests/data-version.example.jsonl) | MLR-GOV-001, MLR-ID-001, MLR-SPOOF-001, MLR-ROB-001, MLR-LANG-001; AC-ML-005, AC-ML-009 |
+| Fail-closed, acknowledged, checksum-verified, external-root acquisition receipt | [`acquire_dataset.py`](../../ml/scripts/acquire_dataset.py) and [governed data workspace](../../ml/data/README.md) | MLR-GOV-001, NFR-PRIV-001, NFR-PRIV-002, NFR-SEC-001; AC-ML-005 |
+| File/header/checksum/label/source validation and exact/near duplicate plus speaker/lineage/generator leakage rejection | [`validate_manifest.py`](../../ml/scripts/validate_manifest.py), [`check_duplicates.py`](../../ml/scripts/check_duplicates.py), and [Phase K tests](../../ml/tests/unit/data/) | MLR-GOV-001, MLR-OOD-001, MLR-ROB-001; AC-ML-005, AC-ML-008, AC-ML-009 |
+| Deterministic speaker/group split and untouched final unseen-generator policy | [OOD split policy](../evaluation/ood-split-policy.md) | MLR-ID-001, MLR-CAL-001, MLR-OOD-001; AC-ML-006, AC-ML-008 |
+| Explicit English/Hindi/Kannada/Indic evidence gaps without coverage claims | [Indic coverage plan](../evaluation/indic-coverage-plan.md) | MLR-LANG-001; AC-ML-009 |
+| Runtime enrollment exclusion, sensitive-data handling, versioning, retention, deletion, and promotion gate | [Data governance](../evaluation/data-governance.md) | FR-ENR-001, NFR-PRIV-001, NFR-PRIV-002, MLR-GOV-001; AC-SYS-007, AC-ML-005 |
+
+Concrete command outcomes are recorded in [Phase K exit-gate evidence](../implementation/phase-status.md#phase-k-exit-gate-evidence).

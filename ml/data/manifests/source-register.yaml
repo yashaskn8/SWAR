@@ -1,0 +1,338 @@
+{
+  "schema_version": "1.0.0",
+  "reviewed_at": "2026-08-29",
+  "format_note": "This file is JSON-compatible YAML so Phase K validation requires no additional parser dependency.",
+  "sources": [
+    {
+      "source_id": "wavefake-1.2.0",
+      "title": "WaveFake: A data set to facilitate audio DeepFake detection",
+      "version": "1.2.0",
+      "sample_kinds": ["TTS"],
+      "official_sources": [
+        {
+          "url": "https://doi.org/10.5281/zenodo.5642694",
+          "authority": "Author-published Zenodo dataset record and datasheet",
+          "accessed_at": "2026-08-29"
+        },
+        {
+          "url": "https://github.com/RUB-SysSec/WaveFake",
+          "authority": "Author-maintained code and dataset reference repository",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "Ruhr University Bochum authors via Zenodo",
+        "description": "Generated speech from declared TTS/vocoder families; the record states that reference bona fide corpora are not redistributed.",
+        "label_authority": "Dataset authors and accompanying datasheet",
+        "speaker_partition": "Generator and source-corpus metadata exist; a SWAR speaker/lineage mapping must be frozen before manifest promotion.",
+        "languages": ["en", "ja"],
+        "accent_status": "VALIDATION_REQUIRED - no accent coverage claim is adopted."
+      },
+      "license": {
+        "status": "VERIFIED_OFFICIAL",
+        "identifier": "CC-BY-SA-4.0",
+        "url": "https://zenodo.org/records/5642694",
+        "permitted_uses": [
+          "Research use subject to the published license",
+          "Adaptation and redistribution subject to attribution and share-alike obligations"
+        ],
+        "redistribution": "Permitted only under the published CC-BY-SA-4.0 obligations; the underlying reference audio is not included by the dataset.",
+        "acknowledgment_required": true,
+        "notes": "License text and the archive checksum are supplied by the official Zenodo record. Production/legal suitability remains deployment-specific."
+      },
+      "adoption": {
+        "status": "APPROVED_FOR_LOCAL_RESEARCH",
+        "permitted_roles": ["SPOOF_TRAINING", "SPOOF_EVALUATION", "OOD_CANDIDATE"],
+        "blockers": []
+      },
+      "acquisition": {
+        "mode": "MANUAL_ARCHIVE_IMPORT",
+        "artifacts": [
+          {
+            "filename": "generated_audio.zip",
+            "checksum_algorithm": "md5",
+            "checksum": "76b3e62d69f866e57ad6b1debaff434b"
+          }
+        ]
+      }
+    },
+    {
+      "source_id": "asvspoof-2021-release",
+      "title": "ASVspoof 2021 LA, PA, and Speech Deepfake post-challenge releases",
+      "version": "2021-post-challenge",
+      "sample_kinds": ["BONAFIDE", "TTS", "VC", "REPLAY"],
+      "official_sources": [
+        {
+          "url": "https://www.asvspoof.org/index2021.html",
+          "authority": "Official ASVspoof 2021 challenge site",
+          "accessed_at": "2026-08-29"
+        },
+        {
+          "url": "https://www.asvspoof.org/asvspoof2021/asvspoof2021_evaluation_plan.pdf",
+          "authority": "Official evaluation plan",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "ASVspoof challenge organizers via Zenodo",
+        "description": "Evaluation releases for logical access, physical access, and speech deepfake tasks, including bona fide, TTS/VC, replay, and channel effects as declared by the organizers.",
+        "label_authority": "Official challenge keys and metadata",
+        "speaker_partition": "Provider partitions and 2019/2021 source maps exist; SWAR must freeze generator-family and speaker-group mappings before use.",
+        "languages": ["en"],
+        "accent_status": "VALIDATION_REQUIRED - the release does not authorize a broad accent claim."
+      },
+      "license": {
+        "status": "VERIFIED_OFFICIAL",
+        "identifier": "ODC-BY-1.0",
+        "url": "https://www.asvspoof.org/index2021.html",
+        "permitted_uses": ["Use under the Open Data Commons Attribution Licence stated by the official challenge site"],
+        "redistribution": "Only as allowed by the stated ODC attribution terms and any linked component/source obligations.",
+        "acknowledgment_required": true,
+        "notes": "Exact multi-part archive hashes, keys, component lineage, and the evaluation-only role must be frozen before local acquisition."
+      },
+      "adoption": {
+        "status": "REFERENCE_ONLY_VALIDATION_REQUIRED",
+        "permitted_roles": ["SPOOF_EVALUATION", "ROBUSTNESS_EVALUATION", "OOD_CANDIDATE"],
+        "blockers": [
+          "Freeze the exact LA/PA/DF subset and all provider archive checksums.",
+          "Map hidden/declared attack identifiers to stable generator or replay families without leaking final OOD families.",
+          "Confirm that the chosen role follows the provider evaluation protocol and linked source-corpus obligations."
+        ]
+      },
+      "acquisition": {
+        "mode": "REFERENCE_ONLY",
+        "artifacts": []
+      }
+    },
+    {
+      "source_id": "asvspoof-2019-release",
+      "title": "ASVspoof 2019 LA and PA challenge database",
+      "version": "2019-release",
+      "sample_kinds": ["BONAFIDE", "TTS", "VC", "REPLAY"],
+      "official_sources": [
+        {
+          "url": "https://doi.org/10.7488/ds/2555",
+          "authority": "University of Edinburgh DataShare dataset record",
+          "accessed_at": "2026-08-29"
+        },
+        {
+          "url": "https://www.asvspoof.org/index2019.html",
+          "authority": "Official ASVspoof 2019 challenge site",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "University of Edinburgh CSTR and ASVspoof organizers",
+        "description": "Provider-defined speaker-disjoint LA/PA partitions covering bona fide, TTS, VC, and replay attacks.",
+        "label_authority": "Official challenge protocols and keys",
+        "speaker_partition": "Provider train/development/evaluation speakers are declared disjoint; SWAR still requires a verified mapping.",
+        "languages": ["en"],
+        "accent_status": "VALIDATION_REQUIRED - no broad accent claim is adopted."
+      },
+      "license": {
+        "status": "VALIDATION_REQUIRED",
+        "identifier": "ASVSPOOF-2019-USAGE-AGREEMENT-REVIEW-REQUIRED",
+        "url": "https://datashare.ed.ac.uk/items/31074a11-b6f6-4e92-a4ad-07093f8c0c45",
+        "permitted_uses": ["No use approved until the bundled usage agreement is reviewed and accepted by an authorized project owner"],
+        "redistribution": "Not approved by SWAR; the official record includes a separate license/usage-agreement file.",
+        "acknowledgment_required": true,
+        "notes": "Publication and download availability do not replace review of the bundled biometric-voice usage agreement."
+      },
+      "adoption": {
+        "status": "REFERENCE_ONLY_VALIDATION_REQUIRED",
+        "permitted_roles": ["SPOOF_TRAINING", "SPOOF_EVALUATION", "OOD_CANDIDATE"],
+        "blockers": [
+          "Review and record the complete bundled usage agreement, retention, and redistribution obligations.",
+          "Record exact archive checksums and verified protocol mappings.",
+          "Approve a purpose-limited biometric-like data handling location and retention owner."
+        ]
+      },
+      "acquisition": {
+        "mode": "REFERENCE_ONLY",
+        "artifacts": []
+      }
+    },
+    {
+      "source_id": "librispeech-slr12",
+      "title": "LibriSpeech ASR corpus",
+      "version": "SLR12-current-record",
+      "sample_kinds": ["BONAFIDE"],
+      "official_sources": [
+        {
+          "url": "https://www.openslr.org/12/",
+          "authority": "Official OpenSLR resource record",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "OpenSLR",
+        "description": "Read English audiobook speech segmented from LibriVox recordings.",
+        "label_authority": "OpenSLR corpus metadata",
+        "speaker_partition": "Provider speaker metadata exists; SWAR speaker/group partitions must be frozen before identity evaluation.",
+        "languages": ["en"],
+        "accent_status": "VALIDATION_REQUIRED - no representative accent claim is adopted."
+      },
+      "license": {
+        "status": "VERIFIED_OFFICIAL",
+        "identifier": "CC-BY-4.0",
+        "url": "https://www.openslr.org/12/",
+        "permitted_uses": ["Use and redistribution subject to CC-BY-4.0 attribution obligations"],
+        "redistribution": "Permitted subject to the official CC-BY-4.0 terms and required attribution.",
+        "acknowledgment_required": true,
+        "notes": "License is verified; biometric-like speaker-evaluation purpose, exact subset, and archive checksum remain unapproved."
+      },
+      "adoption": {
+        "status": "REFERENCE_ONLY_VALIDATION_REQUIRED",
+        "permitted_roles": ["IDENTITY_TRAINING", "IDENTITY_EVALUATION"],
+        "blockers": [
+          "Approve use of public voice recordings for the declared biometric-like speaker-verification purpose.",
+          "Freeze an exact speaker-disjoint subset and official archive checksum.",
+          "Document attribution and retention execution."
+        ]
+      },
+      "acquisition": {
+        "mode": "REFERENCE_ONLY",
+        "artifacts": []
+      }
+    },
+    {
+      "source_id": "indicvoices-r-2024",
+      "title": "IndicVoices-R",
+      "version": "NeurIPS-2024-repository",
+      "sample_kinds": ["BONAFIDE"],
+      "official_sources": [
+        {
+          "url": "https://github.com/AI4Bharat/IndicVoices-R",
+          "authority": "AI4Bharat author repository and dataset links",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "AI4Bharat",
+        "description": "Speech-enhanced derivative of natural IndicVoices speech intended for TTS research; enhancement lineage must not be mislabeled as clean capture.",
+        "label_authority": "AI4Bharat repository metadata and publication",
+        "speaker_partition": "Speaker identifiers are described; SWAR must verify cross-language speaker and source-lineage grouping.",
+        "languages": ["as", "bn", "brx", "doi", "gu", "hi", "kn", "ks", "kok", "mai", "ml", "mni", "mr", "ne", "or", "pa", "sa", "sat", "sd", "ta", "te", "ur"],
+        "accent_status": "Metadata includes regional fields, but no SWAR accent-performance claim is approved."
+      },
+      "license": {
+        "status": "VERIFIED_OFFICIAL",
+        "identifier": "CC-BY-4.0",
+        "url": "https://github.com/AI4Bharat/IndicVoices-R/blob/master/LICENSE.md",
+        "permitted_uses": ["Use and redistribution subject to the repository's CC-BY-4.0 attribution obligations"],
+        "redistribution": "Only under the published CC-BY-4.0 terms and after validating inherited source obligations.",
+        "acknowledgment_required": true,
+        "notes": "License is visible, but inherited collection consent, enhancement lineage, and an exact release checksum require review."
+      },
+      "adoption": {
+        "status": "REFERENCE_ONLY_VALIDATION_REQUIRED",
+        "permitted_roles": ["IDENTITY_EVALUATION", "ROBUSTNESS_EVALUATION"],
+        "blockers": [
+          "Review collection consent and inherited IndicVoices terms for biometric-like evaluation.",
+          "Freeze exact language archives, hashes, speaker groups, and enhancement recipe lineage.",
+          "Establish per-language sample sufficiency before any English, Hindi, Kannada, or broader Indic claim."
+        ]
+      },
+      "acquisition": {
+        "mode": "REFERENCE_ONLY",
+        "artifacts": []
+      }
+    },
+    {
+      "source_id": "indicsynth-2025",
+      "title": "IndicSynth: A Large-Scale Multilingual Synthetic Speech Dataset for Low-Resource Indian Languages",
+      "version": "ACL-2025-and-HuggingFace-current-record",
+      "sample_kinds": ["TTS", "VC"],
+      "official_sources": [
+        {
+          "url": "https://aclanthology.org/2025.acl-long.1070/",
+          "authority": "ACL Anthology publication record",
+          "accessed_at": "2026-08-29"
+        },
+        {
+          "url": "https://huggingface.co/datasets/vdivyasharma/IndicSynth",
+          "authority": "Author-linked dataset repository",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "SBILab, IIIT-Delhi authors",
+        "description": "Synthetic TTS/VC speech derived from the declared IndicSUPERB bona fide source across twelve Indian languages.",
+        "label_authority": "Dataset authors, ACL paper, and dataset card",
+        "speaker_partition": "Target-speaker and generator metadata are described; exact family/version and source lineage must be verified from a frozen revision.",
+        "languages": ["bn", "gu", "hi", "kn", "ml", "mr", "or", "pa", "sa", "ta", "te", "ur"],
+        "accent_status": "VALIDATION_REQUIRED - language availability is not an accent or performance claim."
+      },
+      "license": {
+        "status": "VERIFIED_OFFICIAL",
+        "identifier": "CC-BY-NC-4.0",
+        "url": "https://huggingface.co/datasets/vdivyasharma/IndicSynth",
+        "permitted_uses": ["Non-commercial use subject to attribution and the dataset card/license terms"],
+        "redistribution": "Only as allowed by CC-BY-NC-4.0 and inherited source obligations.",
+        "acknowledgment_required": true,
+        "notes": "A project owner must confirm that the exact SIH use is non-commercial and approve inherited IndicSUPERB obligations."
+      },
+      "adoption": {
+        "status": "REFERENCE_ONLY_VALIDATION_REQUIRED",
+        "permitted_roles": ["SPOOF_TRAINING", "SPOOF_EVALUATION", "OOD_CANDIDATE"],
+        "blockers": [
+          "Confirm the SIH use classification under the non-commercial restriction.",
+          "Freeze the dataset repository revision, Parquet hashes, generator families, speaker groups, and IndicSUPERB lineage.",
+          "Reserve whole generator families before any train/validation manifest is created."
+        ]
+      },
+      "acquisition": {
+        "mode": "REFERENCE_ONLY",
+        "artifacts": []
+      }
+    },
+    {
+      "source_id": "indiefake-2025",
+      "title": "IndieFake Dataset",
+      "version": "2025-project-site-and-preprint",
+      "sample_kinds": ["BONAFIDE", "TTS", "VC"],
+      "official_sources": [
+        {
+          "url": "https://indie-fake-dataset.netlify.app/",
+          "authority": "Author project site and access form",
+          "accessed_at": "2026-08-29"
+        },
+        {
+          "url": "https://arxiv.org/abs/2506.19014",
+          "authority": "Author preprint linked by the project site",
+          "accessed_at": "2026-08-29"
+        }
+      ],
+      "provenance": {
+        "publisher": "Dataset authors",
+        "description": "Indian-English bona fide and deepfake candidate corpus available through an access-request workflow.",
+        "label_authority": "Dataset authors and preprint",
+        "speaker_partition": "Speaker-balanced metadata is described; exact speaker/generator split artifacts require access and verification.",
+        "languages": ["en-IN"],
+        "accent_status": "Candidate Indian-English coverage only; no performance or representative accent claim is approved."
+      },
+      "license": {
+        "status": "VALIDATION_REQUIRED",
+        "identifier": "CC-BY-4.0-SITE-ASSERTION-TERMS-REVIEW-REQUIRED",
+        "url": "https://indie-fake-dataset.netlify.app/",
+        "permitted_uses": ["No use approved until access terms, consent basis, and the complete license artifact are received and reviewed"],
+        "redistribution": "Not approved by SWAR pending the access agreement and complete license review.",
+        "acknowledgment_required": true,
+        "notes": "The project site states CC-BY-4.0, but access is form-controlled and the full delivered terms are not yet in evidence."
+      },
+      "adoption": {
+        "status": "REFERENCE_ONLY_VALIDATION_REQUIRED",
+        "permitted_roles": ["SPOOF_EVALUATION", "OOD_CANDIDATE"],
+        "blockers": [
+          "Obtain authorized access without placing personal access details in the repository.",
+          "Review the delivered license, consent/collection protocol, redistribution limits, and exact archive hashes.",
+          "Freeze speaker and generator family mappings before assigning any final OOD role."
+        ]
+      },
+      "acquisition": {
+        "mode": "REFERENCE_ONLY",
+        "artifacts": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swar.invalid/schemas/data-manifest-record.v1.json",
+  "title": "SWAR governed audio manifest record",
+  "description": "One line of a Phase K JSONL manifest. It describes audio held outside Git; it does not authorize acquisition or use by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "data_version",
+    "sample_id",
+    "source_id",
+    "source_version",
+    "usage_role",
+    "relative_path",
+    "sha256",
+    "byte_size",
+    "audio",
+    "provenance",
+    "labels",
+    "locale",
+    "channel",
+    "governance",
+    "split"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "data_version": { "$ref": "#/$defs/stableId" },
+    "sample_id": { "$ref": "#/$defs/stableId" },
+    "source_id": { "$ref": "#/$defs/stableId" },
+    "source_version": { "type": "string", "minLength": 1 },
+    "usage_role": {
+      "enum": [
+        "IDENTITY_TRAINING",
+        "IDENTITY_EVALUATION",
+        "SPOOF_TRAINING",
+        "SPOOF_EVALUATION",
+        "ROBUSTNESS_EVALUATION",
+        "OOD_CANDIDATE"
+      ]
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "sha256": { "$ref": "#/$defs/sha256" },
+    "byte_size": { "type": "integer", "minimum": 1 },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "container",
+        "codec",
+        "sample_rate_hz",
+        "channels",
+        "frames",
+        "duration_seconds"
+      ],
+      "properties": {
+        "container": { "enum": ["WAV", "FLAC"] },
+        "codec": { "enum": ["PCM_S16LE", "FLAC_PCM_S16"] },
+        "sample_rate_hz": { "type": "integer", "minimum": 1 },
+        "channels": { "type": "integer", "minimum": 1 },
+        "frames": { "type": "integer", "minimum": 1 },
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_sample_id",
+        "speaker_id",
+        "speaker_group_id",
+        "split_group_id",
+        "lineage_root_id",
+        "parent_sample_ids",
+        "near_duplicate_id",
+        "label_authority",
+        "acquisition_receipt_sha256"
+      ],
+      "properties": {
+        "provider_sample_id": { "type": "string", "minLength": 1 },
+        "speaker_id": { "type": "string", "minLength": 1 },
+        "speaker_group_id": { "type": "string", "minLength": 1 },
+        "split_group_id": { "type": "string", "minLength": 1 },
+        "lineage_root_id": { "type": "string", "minLength": 1 },
+        "parent_sample_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "near_duplicate_id": { "type": "string", "minLength": 1 },
+        "label_authority": { "type": "string", "minLength": 1 },
+        "acquisition_receipt_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "attack_type",
+        "generator_family",
+        "generator_version",
+        "is_final_ood_family"
+      ],
+      "properties": {
+        "class": { "enum": ["BONAFIDE", "SPOOF"] },
+        "attack_type": { "enum": ["NONE", "TTS", "VC", "REPLAY", "MIXED", "UNKNOWN"] },
+        "generator_family": { "type": ["string", "null"] },
+        "generator_version": { "type": ["string", "null"] },
+        "is_final_ood_family": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "class": { "const": "BONAFIDE" } } },
+          "then": {
+            "properties": {
+              "attack_type": { "const": "NONE" },
+              "generator_family": { "type": "null" },
+              "generator_version": { "type": "null" },
+              "is_final_ood_family": { "const": false }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "class": { "const": "SPOOF" } } },
+          "then": {
+            "properties": {
+              "attack_type": { "not": { "const": "NONE" } },
+              "generator_family": { "type": "string", "minLength": 1 },
+              "generator_version": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "locale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "language_bcp47", "accent"],
+      "properties": {
+        "status": { "enum": ["KNOWN", "UNKNOWN"] },
+        "language_bcp47": { "type": ["string", "null"] },
+        "accent": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "UNKNOWN" } } },
+          "then": {
+            "properties": {
+              "language_bcp47": { "type": "null" },
+              "accent": { "type": "null" }
+            }
+          }
+        }
+      ]
+    },
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capture_lineage",
+        "codec_lineage",
+        "degradation_lineage",
+        "recipe_version"
+      ],
+      "properties": {
+        "capture_lineage": { "type": "array", "items": { "type": "string" } },
+        "codec_lineage": { "type": "array", "items": { "type": "string" } },
+        "degradation_lineage": { "type": "array", "items": { "type": "string" } },
+        "recipe_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "license_id",
+        "consent_status",
+        "redistribution",
+        "contains_biometric_like_data"
+      ],
+      "properties": {
+        "license_id": { "type": "string", "minLength": 1 },
+        "consent_status": {
+          "enum": ["EXPLICIT_DATASET_CONSENT", "PROVIDER_DOCUMENTED_REUSE_TERMS"]
+        },
+        "redistribution": { "type": "string", "minLength": 1 },
+        "contains_biometric_like_data": { "const": true }
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "policy_version"],
+      "properties": {
+        "name": { "enum": ["TRAIN", "VALIDATION", "TEST", "FINAL_OOD"] },
+        "policy_version": { "const": "swar-speaker-generator-split-v1" }
+      }
+    }
+  },
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
