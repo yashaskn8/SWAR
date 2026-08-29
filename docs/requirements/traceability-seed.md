@@ -183,3 +183,18 @@ Phase K establishes reproducible source, license, provenance, manifest, and spli
 | Runtime enrollment exclusion, sensitive-data handling, versioning, retention, deletion, and promotion gate | [Data governance](../evaluation/data-governance.md) | FR-ENR-001, NFR-PRIV-001, NFR-PRIV-002, MLR-GOV-001; AC-SYS-007, AC-ML-005 |
 
 Concrete command outcomes are recorded in [Phase K exit-gate evidence](../implementation/phase-status.md#phase-k-exit-gate-evidence).
+
+## 11. Phase L audio-preprocessing evidence
+
+Phase L implements deterministic, versioned, quality-aware audio transformations without adding model inference, calibration, risk policy, frontend code, or raw-audio persistence.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| Explicit PCM/WAV/FLAC envelopes, stable errors, 16 kHz mono float32 canonicalization, and chunk-invariant resampling | [`PcmNormalizer`](../../ml/app/audio/pcm_normalizer.py), [audio configuration](../../ml/config/audio.yaml), and [preprocessing contract](../evaluation/audio-preprocessing-contract.md) | FR-QUAL-001, FR-QUAL-003, MLR-GOV-002; AC-ML-004, AC-ML-005 |
+| Exact 4-second windows, 1-second stride, sequence/timeline offsets, reconnect/gap reset, unpadded final partials, and bounded cleanup | [`RollingWindowBuffer`](../../ml/app/audio/rolling_window.py) | FR-QUAL-003, FR-QUAL-004, NFR-REL-001, NFR-PRIV-002; AC-ML-004 |
+| Measured speech duration, silence, level, clipping, noise proxy, continuity, and stable insufficient-evidence reasons | [`EnergyVad`](../../ml/app/audio/vad.py) and [`QualityEvaluator`](../../ml/app/audio/quality.py) | FR-QUAL-001, FR-QUAL-002, MLR-SAFE-001; AC-ML-004 |
+| Shared runtime/training transform and exact 48-kHz chunking parity | [`AudioPreprocessor`](../../ml/app/audio/pipeline.py), [`TrainingPreprocessor`](../../ml/training/preprocessing.py), and [parity tests](../../ml/tests/unit/audio/test_pipeline_parity.py) | FR-QUAL-003, MLR-GOV-002; AC-ML-004, AC-ML-005 |
+| Deterministic codec/noise/resampling stress variants with seed and transformation lineage | [Telephony degradation recipes](../../ml/evaluation/telephony_degradation.py) | MLR-ROB-001, MLR-GOV-001; AC-ML-007 |
+| Golden decoding, malformed-input bounds, exact timing, quality edges, no runtime disk write, error cleanup, and recipe determinism | [Phase L audio tests](../../ml/tests/unit/audio/) | FR-QUAL-001..004, NFR-REL-001, NFR-PRIV-002; AC-ML-004 |
+
+Concrete command outcomes are recorded in [Phase L exit-gate evidence](../implementation/phase-status.md#phase-l-exit-gate-evidence).

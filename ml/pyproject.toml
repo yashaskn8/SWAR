@@ -9,7 +9,10 @@ description = "SWAR FastAPI analysis-service foundation"
 requires-python = ">=3.11,<3.15"
 dependencies = [
     "fastapi==0.141.1",
+    "numpy==2.4.6",
     "pydantic==2.13.4",
+    "soundfile==0.14.0",
+    "soxr==1.1.0",
     "uvicorn==0.52.4",
 ]
 
@@ -21,7 +24,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["app*"]
+include = ["app*", "evaluation*", "training*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers -q"
@@ -34,4 +37,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "UP"]
-
