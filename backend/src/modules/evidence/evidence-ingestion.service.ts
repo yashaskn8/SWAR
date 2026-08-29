@@ -35,6 +35,7 @@ function invalid(fields: string[]): never {
 }
 
 function assertSemantics(input: MlEvidenceDto): void {
+  if (input.schemaVersion !== '1.0.0') invalid(['schemaVersion']);
   const ready =
     input.eventType === MlEvidenceEventType.FAST || input.eventType === MlEvidenceEventType.DEEP;
   if (BigInt(input.windowEndMs) < BigInt(input.windowStartMs)) invalid(['windowEndMs']);
@@ -54,7 +55,8 @@ function assertSemantics(input: MlEvidenceDto): void {
       input.scoreName === undefined ||
       input.scoreDirection === undefined ||
       input.scoreDirection === ScoreDirection.NOT_APPLICABLE ||
-      input.rawScore === undefined
+      input.rawScore === undefined ||
+      input.processingLatencyMs === undefined
     ) {
       invalid([
         'modelName',
@@ -63,6 +65,7 @@ function assertSemantics(input: MlEvidenceDto): void {
         'scoreName',
         'scoreDirection',
         'rawScore',
+        'processingLatencyMs',
       ]);
     }
     return;

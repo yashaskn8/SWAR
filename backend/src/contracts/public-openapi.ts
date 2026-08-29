@@ -309,6 +309,44 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Interventions.release',
     'LiveKitWebhook.receive',
   ]);
+  const operationErrorCodes: Record<string, string[]> = {
+    'Auth.login': ['AUTHENTICATION_FAILED', 'AUTH_RATE_LIMITED', 'DEPENDENCY_UNAVAILABLE'],
+    'Auth.refresh': ['TOKEN_INVALID', 'REFRESH_REUSE_DETECTED', 'DEPENDENCY_UNAVAILABLE'],
+    'Auth.revoke': ['TOKEN_INVALID', 'DEPENDENCY_UNAVAILABLE'],
+    'Calls.create': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'Calls.invite': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'Calls.join': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'Calls.end': ['NOT_FOUND', 'CONFLICT', 'ILLEGAL_DOMAIN_TRANSITION', 'DOMAIN_PROVIDER_FAILED'],
+    'Calls.active': ['PAGINATION_CURSOR_INVALID', 'DEPENDENCY_UNAVAILABLE'],
+    'Calls.riskEvents': ['NOT_FOUND', 'PAGINATION_CURSOR_INVALID', 'DEPENDENCY_UNAVAILABLE'],
+    'TrustedSpeakers.create': ['NOT_FOUND', 'CONFLICT', 'DEPENDENCY_UNAVAILABLE'],
+    'TrustedSpeakers.consent': ['NOT_FOUND', 'CONFLICT', 'DEPENDENCY_UNAVAILABLE'],
+    'TrustedSpeakers.revoke': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'TrustedSpeakers.deleteVoiceprint': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'VoiceEnrollment.enroll': [
+      'NOT_FOUND',
+      'CONFLICT',
+      'DOMAIN_INPUT_INVALID',
+      'DOMAIN_PROVIDER_FAILED',
+    ],
+    'InternalEvidence.ingest': [
+      'IDEMPOTENCY_EVENT_MISMATCH',
+      'EVIDENCE_CONTRACT_INVALID',
+      'ANALYSIS_BINDING_CONFLICT',
+      'NOT_FOUND',
+      'CONFLICT',
+    ],
+    'RiskPolicy.active': ['NOT_FOUND', 'DEPENDENCY_UNAVAILABLE'],
+    'RiskPolicy.put': ['NOT_FOUND', 'CONFLICT', 'DEPENDENCY_UNAVAILABLE'],
+    'LiveKitWebhook.receive': [
+      'WEBHOOK_AUTHENTICATION_FAILED',
+      'WEBHOOK_EVENT_INVALID',
+      'CONFLICT',
+    ],
+    'Interventions.request': ['NOT_FOUND', 'CONFLICT', 'STEP_UP_NOT_REQUIRED'],
+    'Interventions.complete': ['NOT_FOUND', 'CONFLICT'],
+    'Interventions.release': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+  };
   const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
   for (const pathItem of Object.values(document.paths)) {
     for (const method of methods) {
@@ -331,7 +369,7 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
           responses[success[0]] = success[1];
         }
       }
-      operationRecord['x-swar-auth-kind'] =
+      const authKind =
         operationId === 'InternalEvidence.ingest'
           ? 'ML_SERVICE'
           : operationId === 'Interventions.complete'
@@ -341,14 +379,16 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
               : operationId.startsWith('Auth.') || operationId.startsWith('Health.')
                 ? 'PUBLIC'
                 : 'USER_ACCESS_JWT';
+      operationRecord['x-swar-auth-kind'] = authKind;
       operationRecord['x-swar-required-permissions'] = permissions[operationId] ?? [];
-      operationRecord['x-swar-rate-limit-category'] = sensitive.has(operationId)
+      const rateLimitCategory = sensitive.has(operationId)
         ? 'SENSITIVE'
         : queries.has(operationId)
           ? 'QUERY'
           : operationId.startsWith('Health.') || operationId === 'LiveKitWebhook.receive'
             ? 'NONE'
             : 'MUTATION';
+      operationRecord['x-swar-rate-limit-category'] = rateLimitCategory;
       operationRecord['x-swar-idempotency'] = idempotent.has(operationId)
         ? operationId === 'LiveKitWebhook.receive'
           ? 'VERIFIED_EVENT_ID_AND_BODY_HASH'
@@ -356,6 +396,20 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
             ? 'IDEMPOTENCY_KEY_EQUALS_EVENT_ID'
             : 'IDEMPOTENCY_KEY_REQUIRED'
         : 'NOT_APPLICABLE';
+      const documentedErrors = new Set<string>(['VALIDATION_FAILED', 'INTERNAL_ERROR']);
+      if (rateLimitCategory !== 'NONE') documentedErrors.add('RATE_LIMITED');
+      if (authKind === 'USER_ACCESS_JWT') {
+        documentedErrors.add('TOKEN_INVALID');
+        documentedErrors.add('FORBIDDEN');
+      } else if (authKind === 'ML_SERVICE' || authKind === 'VERIFIER_SERVICE') {
+        documentedErrors.add('TOKEN_INVALID');
+      }
+      if (idempotent.has(operationId) && operationId !== 'LiveKitWebhook.receive') {
+        documentedErrors.add('IDEMPOTENCY_KEY_REQUIRED');
+        documentedErrors.add('IDEMPOTENCY_KEY_CONFLICT');
+      }
+      for (const code of operationErrorCodes[operationId] ?? []) documentedErrors.add(code);
+      operationRecord['x-swar-error-codes'] = [...documentedErrors].sort();
       responses.default = {
         description: 'Stable non-sensitive error envelope.',
         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } },

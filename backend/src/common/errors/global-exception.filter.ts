@@ -20,10 +20,16 @@ import type { Response } from 'express';
 import {
   DatabaseUnavailableError,
   IdempotencyConflictError,
+  InvalidPaginationCursorError,
   PersistenceConflictError,
   TenantResourceNotFoundError,
 } from '../../database/database.errors';
 import { AuthError } from '../../modules/auth/auth.errors';
+import {
+  DomainInputError,
+  DomainProviderError,
+  IllegalDomainTransitionError,
+} from '../../modules/domain/domain.errors';
 import { SafeLogger } from '../logging/safe-logger.service';
 import {
   RequestContextService,
@@ -102,6 +108,30 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof AuthError) return this.fromHttp(exception, exception.code);
     if (exception instanceof IdempotencyConflictError)
       return { status: HttpStatus.CONFLICT, code: exception.code, message: exception.message };
+    if (exception instanceof InvalidPaginationCursorError)
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        code: exception.code,
+        message: 'The pagination request is invalid.',
+      };
+    if (exception instanceof DomainInputError)
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        code: exception.code,
+        message: 'The domain input is invalid.',
+      };
+    if (exception instanceof IllegalDomainTransitionError)
+      return {
+        status: HttpStatus.CONFLICT,
+        code: exception.code,
+        message: 'The requested state transition is not allowed.',
+      };
+    if (exception instanceof DomainProviderError)
+      return {
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+        code: exception.code,
+        message: 'A required provider operation did not complete.',
+      };
     if (exception instanceof PersistenceConflictError || exception instanceof ConflictException)
       return {
         status: HttpStatus.CONFLICT,

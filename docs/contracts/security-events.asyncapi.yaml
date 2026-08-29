@@ -18,6 +18,14 @@ channels:
         $ref: '#/components/messages/Subscribe'
       acknowledge:
         $ref: '#/components/messages/Acknowledge'
+      ready:
+        $ref: '#/components/messages/Ready'
+      subscribed:
+        $ref: '#/components/messages/Subscribed'
+      acknowledged:
+        $ref: '#/components/messages/Acknowledged'
+      error:
+        $ref: '#/components/messages/Error'
       riskStateChanged:
         $ref: '#/components/messages/SecurityEvent'
 operations:
@@ -35,6 +43,10 @@ operations:
     action: receive
     channel: { $ref: '#/channels/security' }
     messages:
+      - $ref: '#/channels/security/messages/ready'
+      - $ref: '#/channels/security/messages/subscribed'
+      - $ref: '#/channels/security/messages/acknowledged'
+      - $ref: '#/channels/security/messages/error'
       - $ref: '#/channels/security/messages/riskStateChanged'
 components:
   securitySchemes:
@@ -67,6 +79,54 @@ components:
         required: [eventId]
         properties:
           eventId: { type: string, pattern: '^evt_[0-9a-f]{64}$' }
+    Ready:
+      name: security.ready
+      payload:
+        type: object
+        additionalProperties: false
+        required: [schemaVersion, replayMaximum]
+        properties:
+          schemaVersion: { const: '1.0.0' }
+          replayMaximum: { type: integer, minimum: 1 }
+    Subscribed:
+      name: security.subscribed
+      payload:
+        type: object
+        additionalProperties: false
+        required: [callIds, replayStatus, replayedCount, oldestAvailableEventId, latestAvailableEventId]
+        properties:
+          callIds:
+            type: array
+            minItems: 1
+            uniqueItems: true
+            items: { type: string, format: uuid }
+          replayStatus: { enum: [COMPLETE, BOUNDARY_EXCEEDED] }
+          replayedCount: { type: integer, minimum: 0 }
+          oldestAvailableEventId:
+            oneOf:
+              - { type: string, pattern: '^evt_[0-9a-f]{64}$' }
+              - { type: 'null' }
+          latestAvailableEventId:
+            oneOf:
+              - { type: string, pattern: '^evt_[0-9a-f]{64}$' }
+              - { type: 'null' }
+    Acknowledged:
+      name: security.acknowledged
+      payload:
+        type: object
+        additionalProperties: false
+        required: [eventId]
+        properties:
+          eventId: { type: string, pattern: '^evt_[0-9a-f]{64}$' }
+    Error:
+      name: security.error
+      payload:
+        type: object
+        additionalProperties: false
+        required: [code, message]
+        properties:
+          code: { enum: [SUBSCRIPTION_INVALID, SUBSCRIPTION_FORBIDDEN, ACK_INVALID] }
+          message: { const: The WebSocket request was rejected. }
     SecurityEvent:
       name: versionedSecurityEvent
       payload:

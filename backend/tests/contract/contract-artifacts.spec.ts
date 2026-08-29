@@ -36,6 +36,17 @@ describe('Phase J machine-readable contracts', () => {
     const errors = result.diagnostics.filter(({ severity }) => Number(severity) === errorSeverity);
     expect(errors).toEqual([]);
     expect(result.document).toBeDefined();
+    for (const message of [
+      'security.subscribe',
+      'security.ack',
+      'security.ready',
+      'security.subscribed',
+      'security.acknowledged',
+      'security.error',
+      'versionedSecurityEvent',
+    ]) {
+      expect(source).toContain(`name: ${message}`);
+    }
   });
 
   it('keeps the checked-in REST snapshot byte-for-structure aligned with controllers', async () => {
@@ -67,6 +78,9 @@ describe('Phase J machine-readable contracts', () => {
             'x-swar-auth-kind'?: unknown;
             'x-swar-rate-limit-category'?: unknown;
             'x-swar-idempotency'?: unknown;
+            'x-swar-required-permissions'?: unknown;
+            'x-swar-error-codes'?: unknown;
+            requestBody?: unknown;
           }
         >
       >;
@@ -77,6 +91,18 @@ describe('Phase J machine-readable contracts', () => {
         expect(operation['x-swar-auth-kind']).toBeTypeOf('string');
         expect(operation['x-swar-rate-limit-category']).toBeTypeOf('string');
         expect(operation['x-swar-idempotency']).toBeTypeOf('string');
+        expect(operation['x-swar-error-codes']).toEqual(
+          expect.arrayContaining(['VALIDATION_FAILED', 'INTERNAL_ERROR']),
+        );
+        expect(Array.isArray(operation['x-swar-error-codes'])).toBe(true);
+        for (const code of operation['x-swar-error-codes'] as unknown[]) {
+          expect(String(code)).toMatch(/^[A-Z][A-Z0-9_]+$/u);
+        }
+        if (operation['x-swar-auth-kind'] === 'USER_ACCESS_JWT') {
+          expect(operation['x-swar-required-permissions']).toEqual(expect.any(Array));
+          expect((operation['x-swar-required-permissions'] as unknown[]).length).toBeGreaterThan(0);
+          expect(JSON.stringify(operation.requestBody ?? {})).not.toContain('organizationId');
+        }
         expect(operation.responses).toBeDefined();
         expect(JSON.stringify(operation.responses)).not.toMatch(
           /audio|embedding|ciphertext|password|service.?secret/iu,
@@ -122,8 +148,36 @@ describe('Phase J machine-readable contracts', () => {
         scoreName: 'fictional_raw_score',
         scoreDirection: 'HIGHER_MEANS_MORE',
         rawScore: 0,
+        processingLatencyMs: 1,
       }),
     ).toBe(true);
+    expect(
+      validate({
+        ...common,
+        eventType: 'DEEP',
+        evidenceType: 'SPOOF_DEEP',
+        modelName: 'FICTIONAL_DEEP_MODEL',
+        modelVersion: 'fictional-v0',
+        checkpointHashSha256: 'b'.repeat(64),
+        scoreName: 'fictional_deep_raw_score',
+        scoreDirection: 'HIGHER_MEANS_MORE',
+        rawScore: 0,
+        processingLatencyMs: 2,
+      }),
+    ).toBe(true);
+    expect(
+      validate({
+        ...common,
+        eventType: 'FAST',
+        evidenceType: 'IDENTITY',
+        modelName: 'FICTIONAL_MODEL',
+        modelVersion: 'fictional-v0',
+        checkpointHashSha256: 'a'.repeat(64),
+        scoreName: 'fictional_raw_score',
+        scoreDirection: 'HIGHER_MEANS_MORE',
+        rawScore: 0,
+      }),
+    ).toBe(false);
     expect(
       validate({
         ...common,

@@ -71,7 +71,15 @@
         "x-swar-auth-kind": "PUBLIC",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "AUTHENTICATION_FAILED",
+          "AUTH_RATE_LIMITED",
+          "DEPENDENCY_UNAVAILABLE",
+          "INTERNAL_ERROR",
+          "RATE_LIMITED",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/auth/sessions/refresh": {
@@ -128,7 +136,15 @@
         "x-swar-auth-kind": "PUBLIC",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "INTERNAL_ERROR",
+          "RATE_LIMITED",
+          "REFRESH_REUSE_DETECTED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/auth/sessions/revoke": {
@@ -178,7 +194,14 @@
         "x-swar-auth-kind": "PUBLIC",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "INTERNAL_ERROR",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/health": {
@@ -206,7 +229,11 @@
         "x-swar-auth-kind": "PUBLIC",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "NONE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "INTERNAL_ERROR",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/health/ready": {
@@ -234,7 +261,11 @@
         "x-swar-auth-kind": "PUBLIC",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "NONE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "INTERNAL_ERROR",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/calls": {
@@ -296,7 +327,19 @@
           "call.create"
         ],
         "x-swar-rate-limit-category": "MUTATION",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/calls/{callId}/participants": {
@@ -366,7 +409,19 @@
           "call.create"
         ],
         "x-swar-rate-limit-category": "MUTATION",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/calls/{callId}/join-token": {
@@ -428,7 +483,17 @@
           "call.read"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/calls/{callId}/end": {
@@ -488,7 +553,20 @@
           "call.end"
         ],
         "x-swar-rate-limit-category": "MUTATION",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "ILLEGAL_DOMAIN_TRANSITION",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/calls/active": {
@@ -548,7 +626,16 @@
           "call.read"
         ],
         "x-swar-rate-limit-category": "QUERY",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "PAGINATION_CURSOR_INVALID",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/calls/{callId}/risk-events": {
@@ -616,7 +703,17 @@
           "risk-event.read"
         ],
         "x-swar-rate-limit-category": "QUERY",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "PAGINATION_CURSOR_INVALID",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/trusted-speakers": {
@@ -678,7 +775,19 @@
           "enrollment.manage"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/trusted-speakers/{trustedSpeakerId}/consents": {
@@ -748,7 +857,19 @@
           "enrollment.manage"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/enrollment-consents/{consentId}/revoke": {
@@ -818,7 +939,19 @@
           "enrollment.manage"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/voiceprints/{voiceprintId}": {
@@ -878,7 +1011,19 @@
           "voiceprint.delete"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/voice-enrollments": {
@@ -971,7 +1116,20 @@
           "enrollment.manage"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_INPUT_INVALID",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/internal/ml/evidence": {
@@ -1042,7 +1200,20 @@
         "x-swar-auth-kind": "ML_SERVICE",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "MUTATION",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_EQUALS_EVENT_ID"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_EQUALS_EVENT_ID",
+        "x-swar-error-codes": [
+          "ANALYSIS_BINDING_CONFLICT",
+          "CONFLICT",
+          "EVIDENCE_CONTRACT_INVALID",
+          "IDEMPOTENCY_EVENT_MISMATCH",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/risk-policies/active": {
@@ -1094,7 +1265,16 @@
           "risk-policy.read"
         ],
         "x-swar-rate-limit-category": "QUERY",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/risk-policies/{policyKey}": {
@@ -1164,7 +1344,19 @@
           "risk-policy.manage"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/media/livekit/webhook": {
@@ -1226,7 +1418,14 @@
         "x-swar-auth-kind": "SIGNED_WEBHOOK",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "NONE",
-        "x-swar-idempotency": "VERIFIED_EVENT_ID_AND_BODY_HASH"
+        "x-swar-idempotency": "VERIFIED_EVENT_ID_AND_BODY_HASH",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "INTERNAL_ERROR",
+          "VALIDATION_FAILED",
+          "WEBHOOK_AUTHENTICATION_FAILED",
+          "WEBHOOK_EVENT_INVALID"
+        ]
       }
     },
     "/api/v1/interventions/{interventionId}/verification-challenges": {
@@ -1296,7 +1495,19 @@
           "intervention.resolve"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "STEP_UP_NOT_REQUIRED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/internal/verifications/{challengeId}/result": {
@@ -1367,7 +1578,15 @@
         "x-swar-auth-kind": "VERIFIER_SERVICE",
         "x-swar-required-permissions": [],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "NOT_APPLICABLE"
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     },
     "/api/v1/interventions/{interventionId}/release": {
@@ -1437,7 +1656,19 @@
           "intervention.resolve"
         ],
         "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
       }
     }
   },
@@ -1626,7 +1857,9 @@
           },
           "schemaVersion": {
             "type": "string",
-            "example": "1.0.0"
+            "enum": [
+              "1.0.0"
+            ]
           },
           "organizationId": {
             "type": "string",

@@ -46,7 +46,7 @@
     },
     {
       "if": { "properties": { "eventType": { "enum": ["FAST", "DEEP"] } }, "required": ["eventType"] },
-      "then": { "required": ["modelName", "modelVersion", "checkpointHashSha256", "scoreName", "scoreDirection", "rawScore"] }
+      "then": { "required": ["modelName", "modelVersion", "checkpointHashSha256", "scoreName", "scoreDirection", "rawScore", "processingLatencyMs"] }
     },
     {
       "if": { "properties": { "eventType": { "const": "INSUFFICIENT_EVIDENCE" } }, "required": ["eventType"] },

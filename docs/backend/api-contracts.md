@@ -10,6 +10,8 @@ Controllers and the WebSocket gateway validate transport data, derive the tenant
 
 All REST errors use `{code, message, requestId, details?}`. User access uses a short-lived access JWT whose membership/session is reloaded from PostgreSQL. ML and independent-verifier callbacks have different service credentials. LiveKit uses its signed webhook body and `Authorization` signature. The global API limit values are configuration, not measured capacity claims.
 
+Every generated REST operation carries `x-swar-error-codes`, `x-swar-auth-kind`, `x-swar-required-permissions`, `x-swar-idempotency`, and `x-swar-rate-limit-category`. These extensions are the machine-readable adapter policy; clients must handle documented codes without inferring private provider or database details.
+
 ## 2. REST interaction register
 
 `Idem` means the retry identity. `Rate` names a configurable category. Permissions are evaluated after authentication and all resource queries remain tenant scoped.
@@ -42,11 +44,11 @@ All REST errors use `{code, message, requestId, details?}`. User access uses a s
 
 The standard `ws` endpoint is `/ws/security`. Non-browser clients may send `Authorization: Bearer`; browser-capable clients offer `swar.security.v1` and `swar.bearer.<JWT>` subprotocol tokens. Authentication failure closes with code `1008`. A client sends `security.subscribe` with call UUIDs and optional `afterEventId`; the server derives organization from the access principal and authorizes every call. No client-supplied organization is accepted.
 
-`security.subscribed` returns the bounded replay count and `COMPLETE` or `BOUNDARY_EXCEEDED`, including oldest/latest available event IDs. Each outbound event uses a stable `eventId`; duplicates with equivalent bodies are suppressed, while conflicting reuse fails publishing. The client sends `security.ack`. Only inbound client messages are rate limited; security notifications are not discarded by an outbound rate limiter. Reconnect reconciliation after a boundary error uses the REST risk-event query.
+`security.ready`, `security.subscribed`, `security.acknowledged`, and `security.error` are machine-readable AsyncAPI messages. `security.subscribed` returns the bounded replay count and `COMPLETE` or `BOUNDARY_EXCEEDED`, including oldest/latest available event IDs. Each outbound event uses a stable `eventId`; duplicates with equivalent bodies are suppressed, while conflicting reuse fails publishing. The client sends `security.ack`. Only inbound client messages are rate limited; security notifications are not discarded by an outbound rate limiter. Reconnect reconciliation after a boundary error uses the REST risk-event query.
 
 ## 4. Evidence semantics
 
-`FAST` carries either IDENTITY or SPOOF_FAST ready evidence. `DEEP` carries SPOOF_DEEP. Ready evidence requires model name/version, checkpoint SHA-256, score name/direction, raw score, window/event sequences, timestamps, and measured processing latency when available. `calibratedScore` is optional and requires `calibrationVersion`.
+`FAST` carries either IDENTITY or SPOOF_FAST ready evidence. `DEEP` carries SPOOF_DEEP. Ready evidence requires model name/version, checkpoint SHA-256, score name/direction, raw score, window/event sequences, timestamps, and measured processing latency. `calibratedScore` is optional and requires `calibrationVersion`. Unsupported schema versions fail validation rather than being guessed.
 
 `INSUFFICIENT_EVIDENCE` requires reason codes and forbids scores. `PIPELINE_ERROR` requires an error code and forbids scores. Poor audio does not imply CRITICAL. The ingestion adapter never converts raw logits to probability and never computes a risk state.
 

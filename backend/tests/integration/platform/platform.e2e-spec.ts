@@ -23,6 +23,12 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../../src/app.module';
 import { configureApplication } from '../../../src/bootstrap';
 import { PrismaService } from '../../../src/database/prisma.service';
+import { InvalidPaginationCursorError } from '../../../src/database/database.errors';
+import {
+  DomainInputError,
+  DomainProviderError,
+  IllegalDomainTransitionError,
+} from '../../../src/modules/domain/domain.errors';
 import { DependencyProbeService } from '../../../src/modules/health/dependency-probe.service';
 import { setValidTestEnvironment } from '../../test-environment';
 
@@ -63,6 +69,10 @@ class PlatformTestController {
       timeout: new GatewayTimeoutException('private timeout detail'),
       unavailable: new ServiceUnavailableException('private dependency detail'),
       rate: new HttpException('private rate detail', HttpStatus.TOO_MANY_REQUESTS),
+      pagination: new InvalidPaginationCursorError(),
+      domainInput: new DomainInputError('private input detail'),
+      transition: new IllegalDomainTransitionError('Call', 'ACTIVE', 'AUTHORIZED'),
+      provider: new DomainProviderError('LIVEKIT', 'private-operation', 'private-state'),
     };
     throw errors[kind] ?? new Error('unknown test error');
   }
@@ -191,6 +201,10 @@ describe('Phase H platform integration', () => {
       ['rate', 429, 'RATE_LIMITED'],
       ['timeout', 504, 'DEPENDENCY_TIMEOUT'],
       ['unavailable', 503, 'DEPENDENCY_UNAVAILABLE'],
+      ['pagination', 400, 'PAGINATION_CURSOR_INVALID'],
+      ['domainInput', 400, 'DOMAIN_INPUT_INVALID'],
+      ['transition', 409, 'ILLEGAL_DOMAIN_TRANSITION'],
+      ['provider', 503, 'DOMAIN_PROVIDER_FAILED'],
     ] as const;
     for (const [kind, status, code] of cases) {
       const response = await request(endpoint)

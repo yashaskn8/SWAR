@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { TrackSource } from '@livekit/protocol';
 import {
   AccessToken,
@@ -8,6 +8,7 @@ import {
 } from 'livekit-server-sdk';
 
 import { ConfigurationService } from '../../config/configuration';
+import { ApiError } from '../../common/errors/api-error';
 import { DatabaseConfigurationError } from '../../database/database.errors';
 import { requireText } from '../../database/database.types';
 import {
@@ -139,7 +140,13 @@ export class LiveKitClient extends LiveKitPort {
     rawBody: string,
     authorizationHeader: string,
   ): Promise<VerifiedLiveKitLifecycleEvent> {
-    const event = await this.webhooks.receive(rawBody, authorizationHeader);
+    const event = await this.webhooks.receive(rawBody, authorizationHeader).catch(() => {
+      throw new ApiError(
+        'WEBHOOK_AUTHENTICATION_FAILED',
+        'Webhook authentication failed.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    });
     if (
       ![
         'participant_joined',
@@ -150,11 +157,19 @@ export class LiveKitClient extends LiveKitPort {
         'room_finished',
       ].includes(event.event)
     ) {
-      throw new DatabaseConfigurationError('The verified LiveKit lifecycle event is unsupported.');
+      throw new ApiError(
+        'WEBHOOK_EVENT_INVALID',
+        'The verified webhook event is invalid.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const roomName = event.room?.name;
     if (roomName === undefined || roomName.length === 0 || event.id.length === 0) {
-      throw new DatabaseConfigurationError('The verified LiveKit lifecycle event is incomplete.');
+      throw new ApiError(
+        'WEBHOOK_EVENT_INVALID',
+        'The verified webhook event is invalid.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const trackSource =
       event.track === undefined ? undefined : trackSourceToString(event.track.source).toUpperCase();

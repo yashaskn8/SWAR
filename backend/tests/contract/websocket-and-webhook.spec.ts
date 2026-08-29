@@ -76,6 +76,14 @@ describe('Phase J WebSocket and webhook adapters', () => {
     tenantA.send.mockClear();
     tenantB.send.mockClear();
     const callId = '018f0000-0000-7000-8000-000000000030';
+    const forbiddenCallId = '018f0000-0000-7000-8000-000000000099';
+    assertReadable.mockRejectedValueOnce(new Error('cross-tenant call'));
+    await expect(
+      gateway.subscribe(socket(tenantA), { callIds: [forbiddenCallId] }),
+    ).resolves.toMatchObject({
+      event: 'security.error',
+      data: { code: 'SUBSCRIPTION_FORBIDDEN' },
+    });
     await expect(gateway.subscribe(socket(tenantA), { callIds: [callId] })).resolves.toMatchObject({
       event: 'security.subscribed',
       data: { replayStatus: 'COMPLETE' },

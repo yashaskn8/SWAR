@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  Equals,
   IsArray,
   IsDateString,
   IsEnum,
@@ -29,7 +30,9 @@ export class MlEvidenceDto {
   eventType!: MlEvidenceEventType;
 
   @ApiProperty({ format: 'uuid' }) @IsUUID() eventId!: string;
-  @ApiProperty({ example: '1.0.0' }) @IsString() @MaxLength(40) schemaVersion!: string;
+  @ApiProperty({ enum: ['1.0.0'] })
+  @Equals('1.0.0')
+  schemaVersion!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() organizationId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() callId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() analysisSessionId!: string;
