@@ -1,0 +1,2359 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/sessions": {
+      "post": {
+        "operationId": "Auth.login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "email",
+                  "organizationSlug",
+                  "devicePublicId",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "organizationSlug": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "devicePublicId": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "writeOnly": true,
+                    "maxLength": 1024
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create an access and refresh session for an enrolled device",
+        "tags": [
+          "authentication"
+        ],
+        "x-swar-auth-kind": "PUBLIC",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/auth/sessions/refresh": {
+      "post": {
+        "operationId": "Auth.refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 512
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rotate a refresh session and issue fresh tokens",
+        "tags": [
+          "authentication"
+        ],
+        "x-swar-auth-kind": "PUBLIC",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/auth/sessions/revoke": {
+      "post": {
+        "operationId": "Auth.revoke",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 512
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Revoke a refresh session",
+        "tags": [
+          "authentication"
+        ],
+        "x-swar-auth-kind": "PUBLIC",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "Health.getLiveness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health"
+        ],
+        "x-swar-auth-kind": "PUBLIC",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "NONE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "Health.getReadiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health"
+        ],
+        "x-swar-auth-kind": "PUBLIC",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "NONE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/calls": {
+      "post": {
+        "operationId": "Calls.create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCallDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Authorize and create a controlled WebRTC call",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "call.create"
+        ],
+        "x-swar-rate-limit-category": "MUTATION",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/calls/{callId}/participants": {
+      "post": {
+        "operationId": "Calls.invite",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteParticipantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantGrant"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Authorize a participant and issue a short-lived room grant",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "call.create"
+        ],
+        "x-swar-rate-limit-category": "MUTATION",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/calls/{callId}/join-token": {
+      "post": {
+        "operationId": "Calls.join",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinCallDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinGrant"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issue a fresh short-lived grant to the authorized participant",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "call.read"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/calls/{callId}/end": {
+      "post": {
+        "operationId": "Calls.end",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Call"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "End a controlled call and revoke associated analysis",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "call.end"
+        ],
+        "x-swar-rate-limit-category": "MUTATION",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/calls/active": {
+      "get": {
+        "operationId": "Calls.active",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveCallsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List active calls in the authenticated organization",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "call.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/calls/{callId}/risk-events": {
+      "get": {
+        "operationId": "Calls.riskEvents",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskEventsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List versioned risk-state transitions for an authorized call",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-event.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/trusted-speakers": {
+      "post": {
+        "operationId": "TrustedSpeakers.create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrustedSpeakerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrustedSpeaker"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a tenant-scoped trusted-speaker record",
+        "tags": [
+          "trusted-speakers"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "enrollment.manage"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/trusted-speakers/{trustedSpeakerId}/consents": {
+      "post": {
+        "operationId": "TrustedSpeakers.consent",
+        "parameters": [
+          {
+            "name": "trustedSpeakerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrantConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Consent"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Record explicit enrollment consent",
+        "tags": [
+          "trusted-speakers"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "enrollment.manage"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/enrollment-consents/{consentId}/revoke": {
+      "post": {
+        "operationId": "TrustedSpeakers.revoke",
+        "parameters": [
+          {
+            "name": "consentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke consent and dependent active analysis",
+        "tags": [
+          "trusted-speakers"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "enrollment.manage"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/voiceprints/{voiceprintId}": {
+      "delete": {
+        "operationId": "TrustedSpeakers.deleteVoiceprint",
+        "parameters": [
+          {
+            "name": "voiceprintId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete encrypted voiceprint material and revoke dependent analysis",
+        "tags": [
+          "trusted-speakers"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "voiceprint.delete"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/voice-enrollments": {
+      "post": {
+        "operationId": "VoiceEnrollment.enroll",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "trustedSpeakerId",
+                  "consentId",
+                  "expectedModelVersionId",
+                  "declaredDurationsMs",
+                  "samples"
+                ],
+                "properties": {
+                  "trustedSpeakerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "consentId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedModelVersionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "declaredDurationsMs": {
+                    "type": "string"
+                  },
+                  "samples": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Voiceprint"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an encrypted voiceprint from transient consented samples",
+        "tags": [
+          "voice-enrollment"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "enrollment.manage"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/internal/ml/evidence": {
+      "post": {
+        "operationId": "InternalEvidence.ingest",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-SWAR-Service",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "swar-ml"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MlEvidenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceAccepted"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "mlService": []
+          }
+        ],
+        "summary": "Accept bound, idempotent ML evidence from the authenticated ML service",
+        "tags": [
+          "internal-ml"
+        ],
+        "x-swar-auth-kind": "ML_SERVICE",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "MUTATION",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_EQUALS_EVENT_ID"
+      }
+    },
+    "/api/v1/risk-policies/active": {
+      "get": {
+        "operationId": "RiskPolicy.active",
+        "parameters": [
+          {
+            "name": "policyKey",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve the active immutable policy version",
+        "tags": [
+          "risk-policy"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-policy.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/risk-policies/{policyKey}": {
+      "put": {
+        "operationId": "RiskPolicy.put",
+        "parameters": [
+          {
+            "name": "policyKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutRiskPolicyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create and optionally activate an immutable risk-policy version",
+        "tags": [
+          "risk-policy"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-policy.manage"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/media/livekit/webhook": {
+      "post": {
+        "operationId": "LiveKitWebhook.receive",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "LiveKit webhook signature.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Raw LiveKit lifecycle body. Its signed bytes are verified before field use.",
+          "content": {
+            "application/webhook+json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "liveKitWebhook": []
+          }
+        ],
+        "summary": "Verify a signed LiveKit lifecycle webhook before media binding",
+        "tags": [
+          "media-webhooks"
+        ],
+        "x-swar-auth-kind": "SIGNED_WEBHOOK",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "NONE",
+        "x-swar-idempotency": "VERIFIED_EVENT_ID_AND_BODY_HASH"
+      }
+    },
+    "/api/v1/interventions/{interventionId}/verification-challenges": {
+      "post": {
+        "operationId": "Interventions.request",
+        "parameters": [
+          {
+            "name": "interventionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVerificationChallengeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationChallenge"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request independent step-up or callback verification",
+        "tags": [
+          "interventions"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "intervention.resolve"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    },
+    "/api/v1/internal/verifications/{challengeId}/result": {
+      "post": {
+        "operationId": "Interventions.complete",
+        "parameters": [
+          {
+            "name": "challengeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-SWAR-Service",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "swar-verifier"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteVerificationChallengeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "verifierService": []
+          }
+        ],
+        "summary": "Record an authenticated independent-verifier adapter result",
+        "tags": [
+          "interventions"
+        ],
+        "x-swar-auth-kind": "VERIFIER_SERVICE",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "NOT_APPLICABLE"
+      }
+    },
+    "/api/v1/interventions/{interventionId}/release": {
+      "post": {
+        "operationId": "Interventions.release",
+        "parameters": [
+          {
+            "name": "interventionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseInterventionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Release a hold only after a persisted PASSED independent challenge",
+        "tags": [
+          "interventions"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "intervention.resolve"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED"
+      }
+    }
+  },
+  "info": {
+    "title": "SWAR REST and callback API",
+    "description": "Versioned contracts for authenticated users, internal services, and signed LiveKit webhooks. Examples are fictional.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Versioned SWAR API base path"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "mlService": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "verifierService": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "liveKitWebhook": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+      }
+    },
+    "schemas": {
+      "CreateCallDto": {
+        "type": "object",
+        "properties": {
+          "riskPolicyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "riskPolicyVersion": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "expectedTrustedSpeakerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "protectedActionReference": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "maximumParticipants": {
+            "type": "number",
+            "minimum": 2,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "riskPolicyId",
+          "riskPolicyVersion",
+          "maximumParticipants"
+        ]
+      },
+      "InviteParticipantDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "CALLER",
+              "CUSTOMER",
+              "OBSERVER"
+            ]
+          },
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trustedSpeakerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "JoinCallDto": {
+        "type": "object",
+        "properties": {
+          "participantId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "participantId"
+        ]
+      },
+      "CreateTrustedSpeakerDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "externalReference": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "GrantConsentDto": {
+        "type": "object",
+        "properties": {
+          "purposeCode": {
+            "type": "string",
+            "example": "expected-speaker-verification"
+          },
+          "noticeVersion": {
+            "type": "string",
+            "example": "notice-v1"
+          },
+          "consentAffirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Must be explicitly true."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "purposeCode",
+          "noticeVersion",
+          "consentAffirmed"
+        ]
+      },
+      "RevokeConsentDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "reasonCode"
+        ]
+      },
+      "MlEvidenceDto": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "FAST",
+              "DEEP",
+              "INSUFFICIENT_EVIDENCE",
+              "PIPELINE_ERROR"
+            ]
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "callId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "analysisSessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trackBindingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventSequence": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "windowSequence": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "revision": {
+            "type": "number",
+            "minimum": 0
+          },
+          "evidenceType": {
+            "type": "string",
+            "enum": [
+              "IDENTITY",
+              "SPOOF_FAST",
+              "SPOOF_DEEP",
+              "AUDIO_QUALITY",
+              "INSUFFICIENT_EVIDENCE",
+              "PIPELINE_ERROR"
+            ]
+          },
+          "windowStartMs": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "windowEndMs": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processingLatencyMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "speechDurationMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "qualityScore": {
+            "type": "number"
+          },
+          "reasonCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "modelVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "modelVersion": {
+            "type": "string"
+          },
+          "checkpointHashSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "scoreName": {
+            "type": "string"
+          },
+          "scoreDirection": {
+            "type": "string",
+            "enum": [
+              "HIGHER_MEANS_MORE",
+              "LOWER_MEANS_MORE",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "rawScore": {
+            "type": "number"
+          },
+          "calibratedScore": {
+            "type": "number"
+          },
+          "calibrationVersion": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventType",
+          "eventId",
+          "schemaVersion",
+          "organizationId",
+          "callId",
+          "analysisSessionId",
+          "trackBindingId",
+          "eventSequence",
+          "windowSequence",
+          "revision",
+          "evidenceType",
+          "windowStartMs",
+          "windowEndMs",
+          "observedAt"
+        ]
+      },
+      "PutRiskPolicyDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "schemaVersion": {
+            "type": "string",
+            "maxLength": 40,
+            "example": "1.0.0"
+          },
+          "policyDocument": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "activate": {
+            "type": "boolean",
+            "description": "Activate this immutable version after creation."
+          }
+        },
+        "required": [
+          "version",
+          "schemaVersion",
+          "policyDocument",
+          "activate"
+        ]
+      },
+      "CreateVerificationChallengeDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "CALLBACK",
+              "OUT_OF_BAND"
+            ]
+          }
+        },
+        "required": [
+          "method"
+        ]
+      },
+      "CompleteVerificationChallengeDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "PASSED",
+              "FAILED"
+            ]
+          },
+          "resultCode": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "organizationId",
+          "result",
+          "resultCode"
+        ]
+      },
+      "ReleaseInterventionDto": {
+        "type": "object",
+        "properties": {
+          "verificationChallengeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "verificationChallengeId"
+        ]
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "requestId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "AuthSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "tokenType",
+          "expiresIn",
+          "principal"
+        ],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "readOnly": true,
+            "x-swar-sensitive": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "readOnly": true,
+            "x-swar-sensitive": true
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "expiresIn": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "principal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "userId",
+              "membershipId",
+              "organizationId",
+              "deviceId",
+              "roles"
+            ],
+            "properties": {
+              "userId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "membershipId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "organizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "deviceId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Call": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "callId",
+          "status",
+          "riskPolicyVersion",
+          "createdAt",
+          "startedAt",
+          "endedAt"
+        ],
+        "properties": {
+          "callId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "AUTHORIZED",
+              "ACTIVE",
+              "ENDING",
+              "ENDED",
+              "CANCELLED",
+              "FAILED"
+            ]
+          },
+          "riskPolicyVersion": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "JoinGrant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "roomName",
+          "participantIdentity",
+          "joinToken",
+          "expiresAt"
+        ],
+        "properties": {
+          "roomName": {
+            "type": "string"
+          },
+          "participantIdentity": {
+            "type": "string"
+          },
+          "joinToken": {
+            "type": "string",
+            "readOnly": true,
+            "x-swar-sensitive": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ParticipantGrant": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/JoinGrant"
+          },
+          {
+            "type": "object",
+            "required": [
+              "participantId",
+              "role"
+            ],
+            "properties": {
+              "participantId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "role": {
+                "enum": [
+                  "CALLER",
+                  "CUSTOMER",
+                  "OBSERVER"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "RiskEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "riskEventId",
+          "callId",
+          "eventSequence",
+          "priorState",
+          "state",
+          "reasonCode",
+          "policyVersion",
+          "thresholdVersion",
+          "occurredAt"
+        ],
+        "properties": {
+          "riskEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "callId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventSequence": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "priorState": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "HIGH_RISK",
+              "CRITICAL"
+            ]
+          },
+          "state": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "HIGH_RISK",
+              "CRITICAL"
+            ]
+          },
+          "reasonCode": {
+            "type": "string"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "thresholdVersion": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ActiveCallsPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Call"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RiskEventsPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskEvent"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "TrustedSpeaker": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "trustedSpeakerId",
+          "status",
+          "label"
+        ],
+        "properties": {
+          "trustedSpeakerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "Consent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "consentId",
+          "trustedSpeakerId",
+          "status",
+          "expiresAt"
+        ],
+        "properties": {
+          "consentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trustedSpeakerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "StatusResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "consentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "voiceprintId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "interventionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "Voiceprint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "voiceprintId",
+          "trustedSpeakerId",
+          "modelVersionId",
+          "status"
+        ],
+        "properties": {
+          "voiceprintId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trustedSpeakerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modelVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "EvidenceAccepted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidenceEventId",
+          "eventId",
+          "acceptanceStatus"
+        ],
+        "properties": {
+          "evidenceEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acceptanceStatus": {
+            "enum": [
+              "ACCEPTED",
+              "STALE"
+            ]
+          }
+        }
+      },
+      "RiskPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "riskPolicyId",
+          "policyKey",
+          "version",
+          "schemaVersion",
+          "policyDocument",
+          "status",
+          "effectiveAt"
+        ],
+        "properties": {
+          "riskPolicyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyKey": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "schemaVersion": {
+            "type": "string"
+          },
+          "policyDocument": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "RETIRED"
+            ]
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "VerificationChallenge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "interventionId",
+          "status",
+          "method",
+          "expiresAt"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "interventionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "PASSED",
+              "FAILED",
+              "EXPIRED",
+              "CANCELLED"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resultCode": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "VerificationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "status",
+          "resultCode"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "PASSED",
+              "FAILED"
+            ]
+          },
+          "resultCode": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

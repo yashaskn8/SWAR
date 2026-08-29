@@ -1,0 +1,864 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  DELETED
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  SECURITY_ANALYST
+  CALL_OPERATOR
+  ENROLLMENT_OPERATOR
+  MEMBER
+}
+
+enum DeviceStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum RefreshSessionStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+  EXPIRED
+}
+
+enum TrustedSpeakerStatus {
+  PENDING_ENROLLMENT
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  DELETED
+}
+
+enum ConsentStatus {
+  GRANTED
+  REVOKED
+  EXPIRED
+}
+
+enum VoiceprintStatus {
+  ENROLLING
+  ACTIVE
+  REVOKED
+  DELETED
+  FAILED
+}
+
+enum CallStatus {
+  REQUESTED
+  AUTHORIZED
+  ACTIVE
+  ENDING
+  ENDED
+  CANCELLED
+  FAILED
+}
+
+enum ParticipantRole {
+  CALLER
+  CUSTOMER
+  OBSERVER
+  ML_SUBSCRIBER
+}
+
+enum ParticipantStatus {
+  AUTHORIZED
+  JOINED
+  DISCONNECTED
+  LEFT
+  REVOKED
+}
+
+enum TrackStatus {
+  PUBLISHED
+  MUTED
+  UNPUBLISHED
+  ENDED
+}
+
+enum TrackBindingStatus {
+  AUTHORIZED
+  ACTIVE
+  SUPERSEDED
+  REVOKED
+  REJECTED
+}
+
+enum AnalysisSessionStatus {
+  AUTHORIZED
+  STARTING
+  ACTIVE
+  DEGRADED
+  STOPPING
+  STOPPED
+  FAILED
+  EXPIRED
+  REVOKED
+}
+
+enum ModelCapability {
+  EXPECTED_SPEAKER_SIMILARITY
+  FAST_SPOOF
+  DEEP_SPOOF
+  AUDIO_QUALITY
+}
+
+enum ModelLifecycleStatus {
+  REGISTERED
+  VALIDATED
+  ACTIVE
+  RETIRED
+  REJECTED
+}
+
+enum RiskPolicyStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum EvidenceType {
+  IDENTITY
+  SPOOF_FAST
+  SPOOF_DEEP
+  AUDIO_QUALITY
+  INSUFFICIENT_EVIDENCE
+  PIPELINE_ERROR
+}
+
+enum EvidenceReadiness {
+  READY
+  INSUFFICIENT
+  ERROR
+}
+
+enum ScoreDirection {
+  HIGHER_MEANS_MORE
+  LOWER_MEANS_MORE
+  NOT_APPLICABLE
+}
+
+enum EvidenceAcceptanceStatus {
+  ACCEPTED
+  SUPERSEDED
+  DUPLICATE
+  STALE
+  REJECTED
+}
+
+enum RiskState {
+  VERIFIED
+  UNVERIFIED
+  HIGH_RISK
+  CRITICAL
+}
+
+enum InterventionType {
+  WARN
+  HOLD_PROTECTED_ACTION
+  REQUIRE_STEP_UP
+  REQUIRE_CALLBACK
+  END_CALL
+}
+
+enum InterventionStatus {
+  REQUIRED
+  ACKNOWLEDGED
+  IN_PROGRESS
+  SATISFIED
+  DECLINED
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+enum VerificationStatus {
+  PENDING
+  PASSED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum AlertChannel {
+  SECURITY_WEBSOCKET
+  AUDIT_QUEUE
+  FUTURE_ENTERPRISE
+}
+
+enum AlertStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum AuditOutcome {
+  SUCCEEDED
+  DENIED
+  FAILED
+}
+
+model Organization {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  slug        String   @unique @db.VarChar(80)
+  displayName String   @db.VarChar(160)
+  status      String   @db.VarChar(32)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  memberships          OrganizationMembership[]
+  membershipRoles      OrganizationMembershipRole[]
+  devices              Device[]
+  refreshSessions      RefreshSession[]
+  trustedSpeakers      TrustedSpeaker[]
+  enrollmentConsents   EnrollmentConsent[]
+  voiceprints          Voiceprint[]
+  calls                Call[]
+  callParticipants     CallParticipant[]
+  mediaTracks          MediaTrack[]
+  trackBindings        TrackBinding[]
+  analysisSessions     AnalysisSession[]
+  riskPolicies         RiskPolicy[]
+  evidenceEvents       EvidenceEvent[]
+  riskEvents           RiskEvent[]
+  riskEventEvidence    RiskEventEvidence[]
+  interventions        Intervention[]
+  verificationAttempts VerificationChallenge[]
+  alerts               Alert[]
+  auditLogs            AuditLog[]
+}
+
+model User {
+  id             String     @id @default(uuid(7)) @db.Uuid
+  emailCanonical String     @unique @db.VarChar(320)
+  passwordHash   String     @db.VarChar(255)
+  status         UserStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
+  deletedAt      DateTime?  @db.Timestamptz(6)
+
+  memberships     OrganizationMembership[]
+  trustedSpeakers TrustedSpeaker[]
+}
+
+model OrganizationMembership {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @db.Uuid
+  userId         String           @db.Uuid
+  status         MembershipStatus @default(INVITED)
+  joinedAt       DateTime?        @db.Timestamptz(6)
+  revokedAt      DateTime?        @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(6)
+
+  organization Organization                 @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User                         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  roles        OrganizationMembershipRole[]
+  devices      Device[]
+  sessions     RefreshSession[]
+
+  grantedConsents       EnrollmentConsent[]     @relation("ConsentGrantedBy")
+  createdVoiceprints    Voiceprint[]            @relation("VoiceprintCreatedBy")
+  createdCalls          Call[]                  @relation("CallCreatedBy")
+  participants          CallParticipant[]
+  createdPolicies       RiskPolicy[]            @relation("PolicyCreatedBy")
+  resolvedInterventions Intervention[]          @relation("InterventionResolvedBy")
+  verificationAttempts  VerificationChallenge[] @relation("VerificationPerformedBy")
+  auditLogs             AuditLog[]              @relation("AuditActor")
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, userId])
+  @@index([userId, status])
+  @@index([organizationId, status])
+}
+
+model OrganizationMembershipRole {
+  id             String           @id @default(uuid(7)) @db.Uuid
+  organizationId String           @db.Uuid
+  membershipId   String           @db.Uuid
+  role           OrganizationRole
+  assignedAt     DateTime         @default(now()) @db.Timestamptz(6)
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  membership   OrganizationMembership @relation(fields: [organizationId, membershipId], references: [organizationId, id], onDelete: Cascade)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, membershipId, role])
+  @@index([organizationId, role])
+}
+
+model Device {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  organizationId String       @db.Uuid
+  membershipId   String       @db.Uuid
+  devicePublicId String       @db.VarChar(128)
+  label          String?      @db.VarChar(120)
+  status         DeviceStatus @default(ACTIVE)
+  lastSeenAt     DateTime?    @db.Timestamptz(6)
+  revokedAt      DateTime?    @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(6)
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  membership   OrganizationMembership @relation(fields: [organizationId, membershipId], references: [organizationId, id], onDelete: Restrict)
+  sessions     RefreshSession[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, devicePublicId])
+  @@index([organizationId, membershipId, status])
+}
+
+model RefreshSession {
+  id             String               @id @default(uuid(7)) @db.Uuid
+  organizationId String               @db.Uuid
+  membershipId   String               @db.Uuid
+  deviceId       String               @db.Uuid
+  tokenHash      String               @unique @db.VarChar(255)
+  familyId       String               @db.Uuid
+  status         RefreshSessionStatus @default(ACTIVE)
+  issuedAt       DateTime             @default(now()) @db.Timestamptz(6)
+  expiresAt      DateTime             @db.Timestamptz(6)
+  rotatedAt      DateTime?            @db.Timestamptz(6)
+  revokedAt      DateTime?            @db.Timestamptz(6)
+  createdAt      DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @db.Timestamptz(6)
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  membership   OrganizationMembership @relation(fields: [organizationId, membershipId], references: [organizationId, id], onDelete: Restrict)
+  device       Device                 @relation(fields: [organizationId, deviceId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@index([organizationId, membershipId, status])
+  @@index([organizationId, familyId, status])
+  @@index([expiresAt, status])
+}
+
+model TrustedSpeaker {
+  id                String               @id @default(uuid(7)) @db.Uuid
+  organizationId    String               @db.Uuid
+  userId            String?              @db.Uuid
+  externalReference String?              @db.VarChar(128)
+  label             String               @db.VarChar(160)
+  status            TrustedSpeakerStatus @default(PENDING_ENROLLMENT)
+  createdAt         DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @db.Timestamptz(6)
+  revokedAt         DateTime?            @db.Timestamptz(6)
+  deletedAt         DateTime?            @db.Timestamptz(6)
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  consents     EnrollmentConsent[]
+  voiceprints  Voiceprint[]
+  calls        Call[]
+  participants CallParticipant[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, externalReference])
+  @@unique([organizationId, userId])
+  @@index([organizationId, status])
+}
+
+model EnrollmentConsent {
+  id                    String        @id @default(uuid(7)) @db.Uuid
+  organizationId        String        @db.Uuid
+  trustedSpeakerId      String        @db.Uuid
+  grantedByMembershipId String        @db.Uuid
+  purposeCode           String        @db.VarChar(80)
+  noticeVersion         String        @db.VarChar(40)
+  status                ConsentStatus @default(GRANTED)
+  grantedAt             DateTime      @db.Timestamptz(6)
+  expiresAt             DateTime?     @db.Timestamptz(6)
+  revokedAt             DateTime?     @db.Timestamptz(6)
+  revocationReasonCode  String?       @db.VarChar(80)
+  createdAt             DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime      @updatedAt @db.Timestamptz(6)
+
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  trustedSpeaker TrustedSpeaker         @relation(fields: [organizationId, trustedSpeakerId], references: [organizationId, id], onDelete: Restrict)
+  grantedBy      OrganizationMembership @relation("ConsentGrantedBy", fields: [organizationId, grantedByMembershipId], references: [organizationId, id], onDelete: Restrict)
+  voiceprints    Voiceprint[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, trustedSpeakerId, status])
+  @@index([expiresAt, status])
+}
+
+model Voiceprint {
+  id                    String           @id @default(uuid(7)) @db.Uuid
+  organizationId        String           @db.Uuid
+  trustedSpeakerId      String           @db.Uuid
+  consentId             String           @db.Uuid
+  modelVersionId        String           @db.Uuid
+  createdByMembershipId String           @db.Uuid
+  ciphertext            Bytes?
+  encryptionAlgorithm   String           @db.VarChar(64)
+  encryptionKeyVersion  String           @db.VarChar(128)
+  embeddingFormat       String           @db.VarChar(64)
+  sampleCount           Int
+  status                VoiceprintStatus @default(ENROLLING)
+  createdAt             DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime         @updatedAt @db.Timestamptz(6)
+  activatedAt           DateTime?        @db.Timestamptz(6)
+  revokedAt             DateTime?        @db.Timestamptz(6)
+  deletedAt             DateTime?        @db.Timestamptz(6)
+
+  organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  trustedSpeaker   TrustedSpeaker         @relation(fields: [organizationId, trustedSpeakerId], references: [organizationId, id], onDelete: Restrict)
+  consent          EnrollmentConsent      @relation(fields: [organizationId, consentId], references: [organizationId, id], onDelete: Restrict)
+  modelVersion     ModelVersion           @relation(fields: [modelVersionId], references: [id], onDelete: Restrict)
+  createdBy        OrganizationMembership @relation("VoiceprintCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: Restrict)
+  analysisSessions AnalysisSession[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, trustedSpeakerId, status])
+  @@index([organizationId, consentId])
+  @@index([modelVersionId, status])
+}
+
+model ModelVersion {
+  id                   String               @id @default(uuid(7)) @db.Uuid
+  modelName            String               @db.VarChar(120)
+  version              String               @db.VarChar(80)
+  capability           ModelCapability
+  checkpointHashSha256 String               @db.Char(64)
+  checkpointSource     String               @db.Text
+  checkpointLicense    String               @db.VarChar(160)
+  inputSampleRateHz    Int
+  inputChannelCount    Int
+  scoreName            String               @db.VarChar(120)
+  scoreDirection       ScoreDirection
+  calibrationVersion   String?              @db.VarChar(80)
+  status               ModelLifecycleStatus @default(REGISTERED)
+  createdAt            DateTime             @default(now()) @db.Timestamptz(6)
+  validatedAt          DateTime?            @db.Timestamptz(6)
+  retiredAt            DateTime?            @db.Timestamptz(6)
+
+  voiceprints    Voiceprint[]
+  evidenceEvents EvidenceEvent[]
+
+  @@unique([modelName, version, checkpointHashSha256])
+  @@index([capability, status])
+}
+
+model Call {
+  id                       String     @id @default(uuid(7)) @db.Uuid
+  organizationId           String     @db.Uuid
+  roomName                 String     @db.VarChar(160)
+  expectedTrustedSpeakerId String?    @db.Uuid
+  riskPolicyId             String     @db.Uuid
+  riskPolicyVersion        String     @db.VarChar(40)
+  createdByMembershipId    String     @db.Uuid
+  idempotencyKey           String     @db.VarChar(128)
+  protectedActionReference String?    @db.VarChar(160)
+  status                   CallStatus @default(REQUESTED)
+  authorizedAt             DateTime?  @db.Timestamptz(6)
+  startedAt                DateTime?  @db.Timestamptz(6)
+  endedAt                  DateTime?  @db.Timestamptz(6)
+  createdAt                DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime   @updatedAt @db.Timestamptz(6)
+
+  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  expectedTrustedSpeaker TrustedSpeaker?         @relation(fields: [organizationId, expectedTrustedSpeakerId], references: [organizationId, id], onDelete: Restrict)
+  riskPolicy             RiskPolicy              @relation(fields: [organizationId, riskPolicyId], references: [organizationId, id], onDelete: Restrict)
+  createdBy              OrganizationMembership  @relation("CallCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: Restrict)
+  participants           CallParticipant[]
+  mediaTracks            MediaTrack[]
+  trackBindings          TrackBinding[]
+  analysisSessions       AnalysisSession[]
+  evidenceEvents         EvidenceEvent[]
+  riskEvents             RiskEvent[]
+  interventions          Intervention[]
+  verificationAttempts   VerificationChallenge[]
+  alerts                 Alert[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, roomName])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, expectedTrustedSpeakerId, status])
+}
+
+model CallParticipant {
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  organizationId     String            @db.Uuid
+  callId             String            @db.Uuid
+  membershipId       String?           @db.Uuid
+  trustedSpeakerId   String?           @db.Uuid
+  livekitIdentity    String            @db.VarChar(160)
+  authorizedIdentity String            @db.VarChar(160)
+  displayName        String?           @db.VarChar(160)
+  role               ParticipantRole
+  status             ParticipantStatus @default(AUTHORIZED)
+  authorizedAt       DateTime          @db.Timestamptz(6)
+  joinedAt           DateTime?         @db.Timestamptz(6)
+  disconnectedAt     DateTime?         @db.Timestamptz(6)
+  leftAt             DateTime?         @db.Timestamptz(6)
+  createdAt          DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(6)
+
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call           Call                    @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  membership     OrganizationMembership? @relation(fields: [organizationId, membershipId], references: [organizationId, id], onDelete: Restrict)
+  trustedSpeaker TrustedSpeaker?         @relation(fields: [organizationId, trustedSpeakerId], references: [organizationId, id], onDelete: Restrict)
+  mediaTracks    MediaTrack[]
+  trackBindings  TrackBinding[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, callId, id])
+  @@unique([organizationId, callId, livekitIdentity])
+  @@index([organizationId, callId, status])
+  @@index([organizationId, authorizedIdentity])
+}
+
+model MediaTrack {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  organizationId String      @db.Uuid
+  callId         String      @db.Uuid
+  participantId  String      @db.Uuid
+  trackSid       String      @db.VarChar(128)
+  trackSource    String      @db.VarChar(40)
+  mimeType       String?     @db.VarChar(120)
+  status         TrackStatus @default(PUBLISHED)
+  publishedAt    DateTime    @db.Timestamptz(6)
+  endedAt        DateTime?   @db.Timestamptz(6)
+  createdAt      DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @db.Timestamptz(6)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call         Call            @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  participant  CallParticipant @relation(fields: [organizationId, callId, participantId], references: [organizationId, callId, id], onDelete: Restrict)
+  bindings     TrackBinding[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, callId, id])
+  @@unique([organizationId, trackSid])
+  @@index([organizationId, callId, status])
+  @@index([organizationId, participantId, status])
+}
+
+model TrackBinding {
+  id             String             @id @default(uuid(7)) @db.Uuid
+  organizationId String             @db.Uuid
+  callId         String             @db.Uuid
+  participantId  String             @db.Uuid
+  mediaTrackId   String             @db.Uuid
+  revision       Int
+  status         TrackBindingStatus @default(AUTHORIZED)
+  authorizedAt   DateTime           @db.Timestamptz(6)
+  activatedAt    DateTime?          @db.Timestamptz(6)
+  endedAt        DateTime?          @db.Timestamptz(6)
+  rejectionCode  String?            @db.VarChar(80)
+  createdAt      DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime           @updatedAt @db.Timestamptz(6)
+
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call             Call              @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  participant      CallParticipant   @relation(fields: [organizationId, callId, participantId], references: [organizationId, callId, id], onDelete: Restrict)
+  mediaTrack       MediaTrack        @relation(fields: [organizationId, callId, mediaTrackId], references: [organizationId, callId, id], onDelete: Restrict)
+  analysisSessions AnalysisSession[]
+  evidenceEvents   EvidenceEvent[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, callId, id])
+  @@unique([organizationId, callId, revision])
+  @@unique([organizationId, mediaTrackId])
+  @@index([organizationId, callId, status])
+}
+
+model AnalysisSession {
+  id              String                @id @default(uuid(7)) @db.Uuid
+  organizationId  String                @db.Uuid
+  callId          String                @db.Uuid
+  trackBindingId  String                @db.Uuid
+  voiceprintId    String?               @db.Uuid
+  idempotencyKey  String                @db.VarChar(128)
+  bindingRevision Int
+  status          AnalysisSessionStatus @default(AUTHORIZED)
+  authorizedAt    DateTime              @db.Timestamptz(6)
+  startedAt       DateTime?             @db.Timestamptz(6)
+  stoppedAt       DateTime?             @db.Timestamptz(6)
+  expiresAt       DateTime              @db.Timestamptz(6)
+  failureCode     String?               @db.VarChar(80)
+  createdAt       DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime              @updatedAt @db.Timestamptz(6)
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call           Call            @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  trackBinding   TrackBinding    @relation(fields: [organizationId, callId, trackBindingId], references: [organizationId, callId, id], onDelete: Restrict)
+  voiceprint     Voiceprint?     @relation(fields: [organizationId, voiceprintId], references: [organizationId, id], onDelete: Restrict)
+  evidenceEvents EvidenceEvent[]
+  riskEvents     RiskEvent[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, callId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, callId, status])
+  @@index([expiresAt, status])
+}
+
+model RiskPolicy {
+  id                    String           @id @default(uuid(7)) @db.Uuid
+  organizationId        String           @db.Uuid
+  policyKey             String           @db.VarChar(80)
+  version               String           @db.VarChar(40)
+  schemaVersion         String           @db.VarChar(40)
+  policyDocument        Json
+  status                RiskPolicyStatus @default(DRAFT)
+  createdByMembershipId String           @db.Uuid
+  effectiveAt           DateTime?        @db.Timestamptz(6)
+  retiredAt             DateTime?        @db.Timestamptz(6)
+  createdAt             DateTime         @default(now()) @db.Timestamptz(6)
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    OrganizationMembership @relation("PolicyCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: Restrict)
+  calls        Call[]
+  riskEvents   RiskEvent[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, policyKey, version])
+  @@index([organizationId, status, effectiveAt])
+}
+
+model EvidenceEvent {
+  id                   String                   @id @default(uuid(7)) @db.Uuid
+  organizationId       String                   @db.Uuid
+  callId               String                   @db.Uuid
+  analysisSessionId    String                   @db.Uuid
+  trackBindingId       String                   @db.Uuid
+  modelVersionId       String?                  @db.Uuid
+  supersedesEvidenceId String?                  @db.Uuid
+  idempotencyKey       String                   @db.VarChar(128)
+  schemaVersion        String                   @db.VarChar(40)
+  eventSequence        BigInt
+  windowSequence       BigInt
+  revision             Int
+  evidenceType         EvidenceType
+  readiness            EvidenceReadiness
+  acceptanceStatus     EvidenceAcceptanceStatus @default(ACCEPTED)
+  windowStartMs        BigInt
+  windowEndMs          BigInt
+  observedAt           DateTime                 @db.Timestamptz(6)
+  receivedAt           DateTime                 @default(now()) @db.Timestamptz(6)
+  processingLatencyMs  Int?
+  speechDurationMs     Int?
+  qualityScore         Decimal?                 @db.Decimal(18, 9)
+  reasonCodes          String[]                 @default([])
+  modelName            String?                  @db.VarChar(120)
+  modelVersion         String?                  @db.VarChar(80)
+  checkpointHashSha256 String?                  @db.Char(64)
+  scoreName            String?                  @db.VarChar(120)
+  scoreDirection       ScoreDirection           @default(NOT_APPLICABLE)
+  rawScore             Decimal?                 @db.Decimal(18, 9)
+  calibratedScore      Decimal?                 @db.Decimal(18, 9)
+  calibrationVersion   String?                  @db.VarChar(80)
+  errorCode            String?                  @db.VarChar(80)
+  createdAt            DateTime                 @default(now()) @db.Timestamptz(6)
+
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call            Call                @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  analysisSession AnalysisSession     @relation(fields: [organizationId, callId, analysisSessionId], references: [organizationId, callId, id], onDelete: Restrict)
+  trackBinding    TrackBinding        @relation(fields: [organizationId, callId, trackBindingId], references: [organizationId, callId, id], onDelete: Restrict)
+  modelVersionRef ModelVersion?       @relation(fields: [modelVersionId], references: [id], onDelete: Restrict)
+  supersedes      EvidenceEvent?      @relation("EvidenceRevision", fields: [organizationId, supersedesEvidenceId], references: [organizationId, id], onDelete: Restrict)
+  revisions       EvidenceEvent[]     @relation("EvidenceRevision")
+  riskEventLinks  RiskEventEvidence[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, analysisSessionId, eventSequence])
+  @@unique([organizationId, analysisSessionId, windowSequence, evidenceType, revision])
+  @@index([organizationId, callId, observedAt])
+  @@index([organizationId, analysisSessionId, windowSequence, acceptanceStatus])
+  @@index([modelVersionId, observedAt])
+}
+
+model RiskEvent {
+  id                   String    @id @default(uuid(7)) @db.Uuid
+  organizationId       String    @db.Uuid
+  callId               String    @db.Uuid
+  analysisSessionId    String?   @db.Uuid
+  riskPolicyId         String    @db.Uuid
+  idempotencyKey       String    @db.VarChar(128)
+  schemaVersion        String    @db.VarChar(40)
+  eventSequence        BigInt
+  priorState           RiskState
+  state                RiskState
+  transitionReasonCode String    @db.VarChar(80)
+  policyKey            String    @db.VarChar(80)
+  policyVersion        String    @db.VarChar(40)
+  thresholdVersion     String    @db.VarChar(80)
+  occurredAt           DateTime  @db.Timestamptz(6)
+  receivedAt           DateTime  @default(now()) @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @db.Timestamptz(6)
+
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call            Call                @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  analysisSession AnalysisSession?    @relation(fields: [organizationId, analysisSessionId], references: [organizationId, id], onDelete: Restrict)
+  riskPolicy      RiskPolicy          @relation(fields: [organizationId, riskPolicyId], references: [organizationId, id], onDelete: Restrict)
+  evidenceLinks   RiskEventEvidence[]
+  interventions   Intervention[]
+  alerts          Alert[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, callId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, callId, eventSequence])
+  @@index([organizationId, callId, occurredAt])
+  @@index([organizationId, state, occurredAt])
+}
+
+model RiskEventEvidence {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  organizationId  String   @db.Uuid
+  riskEventId     String   @db.Uuid
+  evidenceEventId String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  riskEvent     RiskEvent     @relation(fields: [organizationId, riskEventId], references: [organizationId, id], onDelete: Cascade)
+  evidenceEvent EvidenceEvent @relation(fields: [organizationId, evidenceEventId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, riskEventId, evidenceEventId])
+  @@index([organizationId, evidenceEventId])
+}
+
+model Intervention {
+  id                       String             @id @default(uuid(7)) @db.Uuid
+  organizationId           String             @db.Uuid
+  callId                   String             @db.Uuid
+  riskEventId              String             @db.Uuid
+  resolvedByMembershipId   String?            @db.Uuid
+  idempotencyKey           String             @db.VarChar(128)
+  type                     InterventionType
+  status                   InterventionStatus @default(REQUIRED)
+  policyVersion            String             @db.VarChar(40)
+  reasonCode               String             @db.VarChar(80)
+  protectedActionReference String?            @db.VarChar(160)
+  requiredAt               DateTime           @db.Timestamptz(6)
+  acknowledgedAt           DateTime?          @db.Timestamptz(6)
+  resolvedAt               DateTime?          @db.Timestamptz(6)
+  expiresAt                DateTime?          @db.Timestamptz(6)
+  createdAt                DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime           @updatedAt @db.Timestamptz(6)
+
+  organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call                 Call                    @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  riskEvent            RiskEvent               @relation(fields: [organizationId, callId, riskEventId], references: [organizationId, callId, id], onDelete: Restrict)
+  resolvedBy           OrganizationMembership? @relation("InterventionResolvedBy", fields: [organizationId, resolvedByMembershipId], references: [organizationId, id], onDelete: Restrict)
+  verificationAttempts VerificationChallenge[]
+  alerts               Alert[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, callId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, callId, status])
+  @@index([organizationId, status, requiredAt])
+}
+
+model VerificationChallenge {
+  id                      String             @id @default(uuid(7)) @db.Uuid
+  organizationId          String             @db.Uuid
+  callId                  String             @db.Uuid
+  interventionId          String             @db.Uuid
+  performedByMembershipId String?            @db.Uuid
+  idempotencyKey          String             @db.VarChar(128)
+  method                  String             @db.VarChar(80)
+  status                  VerificationStatus @default(PENDING)
+  attemptNumber           Int
+  requestedAt             DateTime           @db.Timestamptz(6)
+  completedAt             DateTime?          @db.Timestamptz(6)
+  expiresAt               DateTime           @db.Timestamptz(6)
+  resultCode              String?            @db.VarChar(80)
+  createdAt               DateTime           @default(now()) @db.Timestamptz(6)
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call         Call                    @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  intervention Intervention            @relation(fields: [organizationId, callId, interventionId], references: [organizationId, callId, id], onDelete: Restrict)
+  performedBy  OrganizationMembership? @relation("VerificationPerformedBy", fields: [organizationId, performedByMembershipId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, interventionId, attemptNumber])
+  @@index([organizationId, callId, status])
+  @@index([expiresAt, status])
+}
+
+model Alert {
+  id                 String       @id @default(uuid(7)) @db.Uuid
+  organizationId     String       @db.Uuid
+  callId             String       @db.Uuid
+  riskEventId        String       @db.Uuid
+  interventionId     String?      @db.Uuid
+  idempotencyKey     String       @db.VarChar(128)
+  channel            AlertChannel
+  status             AlertStatus  @default(PENDING)
+  eventType          String       @db.VarChar(120)
+  schemaVersion      String       @db.VarChar(40)
+  recipientReference String?      @db.VarChar(160)
+  attemptCount       Int          @default(0)
+  nextAttemptAt      DateTime?    @db.Timestamptz(6)
+  deliveredAt        DateTime?    @db.Timestamptz(6)
+  failureCode        String?      @db.VarChar(80)
+  createdAt          DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime     @updatedAt @db.Timestamptz(6)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call         Call          @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  riskEvent    RiskEvent     @relation(fields: [organizationId, callId, riskEventId], references: [organizationId, callId, id], onDelete: Restrict)
+  intervention Intervention? @relation(fields: [organizationId, interventionId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, status, nextAttemptAt])
+  @@index([organizationId, callId, createdAt])
+}
+
+model AuditLog {
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  organizationId       String       @db.Uuid
+  actorMembershipId    String?      @db.Uuid
+  correlationId        String       @db.VarChar(128)
+  idempotencyKey       String?      @db.VarChar(128)
+  action               String       @db.VarChar(120)
+  targetType           String       @db.VarChar(80)
+  targetId             String       @db.Uuid
+  outcome              AuditOutcome
+  reasonCode           String?      @db.VarChar(80)
+  sourceIpHash         String?      @db.Char(64)
+  nonSensitiveMetadata Json?
+  occurredAt           DateTime     @db.Timestamptz(6)
+  createdAt            DateTime     @default(now()) @db.Timestamptz(6)
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor        OrganizationMembership? @relation("AuditActor", fields: [organizationId, actorMembershipId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, targetType, targetId, occurredAt])
+  @@index([organizationId, correlationId])
+}

@@ -1,0 +1,160 @@
+import { HttpStatus, Injectable } from '@nestjs/common';
+
+import {
+  AnalysisSessionStatus,
+  CallStatus,
+  EvidenceAcceptanceStatus,
+  EvidenceReadiness,
+  EvidenceType,
+  ScoreDirection,
+} from '../../generated/prisma/client';
+import { ApiError } from '../../common/errors/api-error';
+import { CallRepository } from '../calls/call.repository';
+import { MlEvidenceDto, MlEvidenceEventType } from './evidence.contracts';
+import { EvidenceRepository } from './evidence.repository';
+
+const terminalCalls = new Set<CallStatus>([
+  CallStatus.ENDED,
+  CallStatus.CANCELLED,
+  CallStatus.FAILED,
+]);
+const terminalSessions = new Set<AnalysisSessionStatus>([
+  AnalysisSessionStatus.STOPPED,
+  AnalysisSessionStatus.FAILED,
+  AnalysisSessionStatus.EXPIRED,
+  AnalysisSessionStatus.REVOKED,
+]);
+
+function invalid(fields: string[]): never {
+  throw new ApiError(
+    'EVIDENCE_CONTRACT_INVALID',
+    'The evidence event is invalid.',
+    HttpStatus.BAD_REQUEST,
+    { fields },
+  );
+}
+
+function assertSemantics(input: MlEvidenceDto): void {
+  const ready =
+    input.eventType === MlEvidenceEventType.FAST || input.eventType === MlEvidenceEventType.DEEP;
+  if (BigInt(input.windowEndMs) < BigInt(input.windowStartMs)) invalid(['windowEndMs']);
+  if (input.calibratedScore !== undefined && input.calibrationVersion === undefined) {
+    invalid(['calibrationVersion']);
+  }
+  if (ready) {
+    const expectedTypes =
+      input.eventType === MlEvidenceEventType.FAST
+        ? new Set<EvidenceType>([EvidenceType.IDENTITY, EvidenceType.SPOOF_FAST])
+        : new Set<EvidenceType>([EvidenceType.SPOOF_DEEP]);
+    if (!expectedTypes.has(input.evidenceType)) invalid(['eventType', 'evidenceType']);
+    if (
+      input.modelName === undefined ||
+      input.modelVersion === undefined ||
+      input.checkpointHashSha256 === undefined ||
+      input.scoreName === undefined ||
+      input.scoreDirection === undefined ||
+      input.scoreDirection === ScoreDirection.NOT_APPLICABLE ||
+      input.rawScore === undefined
+    ) {
+      invalid([
+        'modelName',
+        'modelVersion',
+        'checkpointHashSha256',
+        'scoreName',
+        'scoreDirection',
+        'rawScore',
+      ]);
+    }
+    return;
+  }
+  const scoreFieldsPresent = [
+    input.modelName,
+    input.modelVersion,
+    input.checkpointHashSha256,
+    input.scoreName,
+    input.scoreDirection,
+    input.rawScore,
+    input.calibratedScore,
+    input.calibrationVersion,
+  ].some((value) => value !== undefined);
+  if (scoreFieldsPresent) invalid(['modelEvidence']);
+  if (input.eventType === MlEvidenceEventType.INSUFFICIENT_EVIDENCE) {
+    if (input.evidenceType !== EvidenceType.INSUFFICIENT_EVIDENCE || !input.reasonCodes?.length) {
+      invalid(['evidenceType', 'reasonCodes']);
+    }
+  } else if (input.evidenceType !== EvidenceType.PIPELINE_ERROR || input.errorCode === undefined) {
+    invalid(['evidenceType', 'errorCode']);
+  }
+}
+
+@Injectable()
+export class EvidenceIngestionService {
+  constructor(
+    private readonly calls: CallRepository,
+    private readonly evidence: EvidenceRepository,
+  ) {}
+
+  async ingest(input: MlEvidenceDto) {
+    assertSemantics(input);
+    const context = { organizationId: input.organizationId };
+    const grant = await this.calls.findAnalysisGrantContext(context, input.analysisSessionId);
+    if (grant.call.id !== input.callId || grant.binding.id !== input.trackBindingId) {
+      throw new ApiError(
+        'ANALYSIS_BINDING_CONFLICT',
+        'Evidence does not match the authorized media binding.',
+        HttpStatus.CONFLICT,
+      );
+    }
+    const acceptanceStatus =
+      terminalCalls.has(grant.call.status) || terminalSessions.has(grant.session.status)
+        ? EvidenceAcceptanceStatus.STALE
+        : EvidenceAcceptanceStatus.ACCEPTED;
+    const readiness =
+      input.eventType === MlEvidenceEventType.INSUFFICIENT_EVIDENCE
+        ? EvidenceReadiness.INSUFFICIENT
+        : input.eventType === MlEvidenceEventType.PIPELINE_ERROR
+          ? EvidenceReadiness.ERROR
+          : EvidenceReadiness.READY;
+    const event = await this.evidence.record(context, {
+      callId: input.callId,
+      analysisSessionId: input.analysisSessionId,
+      trackBindingId: input.trackBindingId,
+      ...(input.modelVersionId === undefined ? {} : { modelVersionId: input.modelVersionId }),
+      idempotencyKey: input.eventId,
+      schemaVersion: input.schemaVersion,
+      eventSequence: BigInt(input.eventSequence),
+      windowSequence: BigInt(input.windowSequence),
+      revision: input.revision,
+      evidenceType: input.evidenceType,
+      readiness,
+      acceptanceStatus,
+      windowStartMs: BigInt(input.windowStartMs),
+      windowEndMs: BigInt(input.windowEndMs),
+      observedAt: new Date(input.observedAt),
+      ...(input.processingLatencyMs === undefined
+        ? {}
+        : { processingLatencyMs: input.processingLatencyMs }),
+      ...(input.speechDurationMs === undefined ? {} : { speechDurationMs: input.speechDurationMs }),
+      ...(input.qualityScore === undefined ? {} : { qualityScore: input.qualityScore }),
+      ...(input.reasonCodes === undefined ? {} : { reasonCodes: input.reasonCodes }),
+      ...(input.modelName === undefined ? {} : { modelName: input.modelName }),
+      ...(input.modelVersion === undefined ? {} : { modelVersion: input.modelVersion }),
+      ...(input.checkpointHashSha256 === undefined
+        ? {}
+        : { checkpointHashSha256: input.checkpointHashSha256 }),
+      ...(input.scoreName === undefined ? {} : { scoreName: input.scoreName }),
+      ...(input.scoreDirection === undefined ? {} : { scoreDirection: input.scoreDirection }),
+      ...(input.rawScore === undefined ? {} : { rawScore: input.rawScore }),
+      ...(input.calibratedScore === undefined ? {} : { calibratedScore: input.calibratedScore }),
+      ...(input.calibrationVersion === undefined
+        ? {}
+        : { calibrationVersion: input.calibrationVersion }),
+      ...(input.errorCode === undefined ? {} : { errorCode: input.errorCode }),
+    });
+    return {
+      evidenceEventId: event.id,
+      eventId: input.eventId,
+      acceptanceStatus: event.acceptanceStatus,
+    };
+  }
+}

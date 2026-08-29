@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swar.local/contracts/ml-analysis-control.v1.json",
+  "title": "SWAR ML analysis control v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "analysisSessionId", "callId", "roomName", "participantIdentity", "trackSid", "grantToken", "grantExpiresAt"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "analysisSessionId": { "type": "string", "format": "uuid" },
+    "callId": { "type": "string", "format": "uuid" },
+    "roomName": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "participantIdentity": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "trackSid": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "grantToken": { "type": "string", "minLength": 1, "writeOnly": true },
+    "grantExpiresAt": { "type": "string", "format": "date-time" },
+    "voiceprintReference": { "type": "string", "format": "uuid", "description": "Opaque reference; never an embedding." }
+  }
+}

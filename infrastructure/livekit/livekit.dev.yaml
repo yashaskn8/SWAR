@@ -1,0 +1,13 @@
+# Non-secret native development template. start-livekit.ps1 writes a generated
+# ignored runtime copy with validated environment values and API credentials.
+port: __LIVEKIT_PORT__
+rtc:
+  tcp_port: __LIVEKIT_RTC_TCP_PORT__
+  udp_port: __LIVEKIT_RTC_UDP_PORT__
+  use_external_ip: false
+  node_ip: __LIVEKIT_NODE_IP__
+logging:
+  level: info
+  json: true
+keys:
+  __LIVEKIT_API_KEY__: __LIVEKIT_API_SECRET__

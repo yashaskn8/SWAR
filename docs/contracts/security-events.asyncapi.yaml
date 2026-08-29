@@ -1,0 +1,73 @@
+asyncapi: 3.0.0
+info:
+  title: SWAR security WebSocket API
+  version: 1.0.0
+  description: Authenticated tenant-scoped security events at /ws/security. Outbound risk events are not rate limited.
+servers:
+  native:
+    host: localhost:3000
+    pathname: /ws/security
+    protocol: ws
+    security:
+      - $ref: '#/components/securitySchemes/userAccessToken'
+channels:
+  security:
+    address: /ws/security
+    messages:
+      subscribe:
+        $ref: '#/components/messages/Subscribe'
+      acknowledge:
+        $ref: '#/components/messages/Acknowledge'
+      riskStateChanged:
+        $ref: '#/components/messages/SecurityEvent'
+operations:
+  subscribeToCalls:
+    action: send
+    channel: { $ref: '#/channels/security' }
+    messages:
+      - $ref: '#/channels/security/messages/subscribe'
+  acknowledgeEvent:
+    action: send
+    channel: { $ref: '#/channels/security' }
+    messages:
+      - $ref: '#/channels/security/messages/acknowledge'
+  receiveSecurityEvents:
+    action: receive
+    channel: { $ref: '#/channels/security' }
+    messages:
+      - $ref: '#/channels/security/messages/riskStateChanged'
+components:
+  securitySchemes:
+    userAccessToken:
+      type: httpApiKey
+      in: header
+      name: Sec-WebSocket-Protocol
+      description: Offer swar.security.v1 and swar.bearer.<access JWT>; Authorization Bearer is also accepted for non-browser clients.
+  messages:
+    Subscribe:
+      name: security.subscribe
+      payload:
+        type: object
+        additionalProperties: false
+        required: [callIds]
+        properties:
+          callIds:
+            type: array
+            minItems: 1
+            uniqueItems: true
+            items: { type: string, format: uuid }
+          afterEventId:
+            type: string
+            pattern: '^evt_[0-9a-f]{64}$'
+    Acknowledge:
+      name: security.ack
+      payload:
+        type: object
+        additionalProperties: false
+        required: [eventId]
+        properties:
+          eventId: { type: string, pattern: '^evt_[0-9a-f]{64}$' }
+    SecurityEvent:
+      name: versionedSecurityEvent
+      payload:
+        $ref: ./schemas/security-event.v1.json

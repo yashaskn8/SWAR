@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: SWAR ML-to-backend evidence API
+  version: 1.0.0
+  description: Internal evidence-ingestion contract. Evidence cannot assert a tenant different from its authorized analysis binding.
+servers:
+  - url: /api/v1/internal/ml
+paths:
+  /evidence:
+    post:
+      operationId: ingestMlEvidence
+      summary: Ingest FAST, DEEP, INSUFFICIENT_EVIDENCE, or PIPELINE_ERROR evidence.
+      security:
+        - mlService: []
+      parameters:
+        - name: X-SWAR-Service
+          in: header
+          required: true
+          schema: { const: swar-ml }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Must equal the eventId in the body.
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas/ml-evidence.v1.json
+            examples:
+              fictionalFastIdentity:
+                summary: Fictional contract example; not a measured model result.
+                value:
+                  eventType: FAST
+                  eventId: 018f0000-0000-7000-8000-000000000001
+                  schemaVersion: 1.0.0
+                  organizationId: 018f0000-0000-7000-8000-000000000002
+                  callId: 018f0000-0000-7000-8000-000000000003
+                  analysisSessionId: 018f0000-0000-7000-8000-000000000004
+                  trackBindingId: 018f0000-0000-7000-8000-000000000005
+                  eventSequence: '1'
+                  windowSequence: '1'
+                  revision: 0
+                  evidenceType: IDENTITY
+                  windowStartMs: '0'
+                  windowEndMs: '4000'
+                  observedAt: '2030-01-01T00:00:04Z'
+                  processingLatencyMs: 1
+                  modelName: FICTIONAL_MODEL
+                  modelVersion: fictional-v0
+                  checkpointHashSha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                  scoreName: fictional_raw_score
+                  scoreDirection: HIGHER_MEANS_MORE
+                  rawScore: 0
+      responses:
+        '202':
+          description: Stored as ACCEPTED or STALE after binding and lifecycle validation.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [evidenceEventId, eventId, acceptanceStatus]
+                properties:
+                  evidenceEventId: { type: string, format: uuid }
+                  eventId: { type: string, format: uuid }
+                  acceptanceStatus: { enum: [ACCEPTED, STALE] }
+        default:
+          description: Authentication, binding, validation, or idempotency error.
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas/error-envelope.v1.json
+components:
+  securitySchemes:
+    mlService:
+      type: http
+      scheme: bearer
+      description: Dedicated ML-to-backend service credential; never a user JWT.

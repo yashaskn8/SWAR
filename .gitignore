@@ -1,0 +1,66 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+
+# Node and TypeScript
+**/node_modules/
+**/dist/
+**/coverage/
+backend/src/generated/prisma/
+*.tsbuildinfo
+npm-debug.log*
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+*.py[cod]
+.coverage
+htmlcov/
+
+# Android and Gradle
+**/.gradle/
+**/build/
+local.properties
+
+# Sensitive biometric-like media and model artifacts
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.aac
+*.ogg
+*.opus
+*.pcm
+*.raw
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+**/checkpoints/
+
+# Local databases, process state, logs, and editor files
+*.db
+*.sqlite
+*.sqlite3
+.pgdata/
+.runtime/
+*.pid
+*.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

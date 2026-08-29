@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swar.local/contracts/security-event.v1.json",
+  "title": "SWAR security event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "eventType", "schemaVersion", "callId", "targetId", "occurredAt", "metadata"],
+  "properties": {
+    "eventId": { "type": "string", "pattern": "^evt_[0-9a-f]{64}$" },
+    "eventType": {
+      "enum": ["risk.state.changed", "intervention.required", "call.ended", "dashboard.risk-event.created"]
+    },
+    "schemaVersion": { "const": "1.0.0" },
+    "callId": { "type": "string", "format": "uuid" },
+    "targetId": { "type": "string", "format": "uuid" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": { "enum": ["VERIFIED", "UNVERIFIED", "HIGH_RISK", "CRITICAL"] },
+        "reasonCode": { "type": "string", "maxLength": 80 },
+        "policyVersion": { "type": "string", "maxLength": 40 }
+      }
+    }
+  }
+}

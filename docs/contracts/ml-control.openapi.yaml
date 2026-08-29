@@ -1,0 +1,122 @@
+openapi: 3.1.0
+info:
+  title: SWAR backend-to-ML control API
+  version: 1.0.0
+  description: Internal loopback/private-network control contract. Fictional identifiers only.
+servers:
+  - url: /internal/v1
+security:
+  - backendService: []
+paths:
+  /analysis-sessions:
+    post:
+      operationId: createAnalysisSession
+      summary: Start analysis for one backend-authorized participant and track binding.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas/ml-analysis-control.v1.json
+      responses:
+        '202':
+          description: Analysis start accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accepted'
+        default:
+          $ref: '#/components/responses/Error'
+  /analysis-sessions/{analysisSessionId}/stop:
+    post:
+      operationId: stopAnalysisSession
+      summary: Idempotently stop analysis and clear transient buffers.
+      parameters:
+        - $ref: '#/components/parameters/AnalysisSessionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reasonCode]
+              properties:
+                reasonCode: { type: string, maxLength: 80 }
+      responses:
+        '204': { description: Stopped or already stopped. }
+        default: { $ref: '#/components/responses/Error' }
+  /enrollment-inferences:
+    post:
+      operationId: inferEphemeralEnrollment
+      summary: Infer an embedding from transient consented samples; the ML service must clear samples and output buffers.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas/ml-enrollment-control.v1.json
+      responses:
+        '200':
+          description: Ephemeral inference result. Embedding is service-to-service only and must be cleared after encrypted persistence.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [modelVersionId, embeddingFormat, acceptedSampleCount, embedding]
+                properties:
+                  modelVersionId: { type: string, format: uuid }
+                  embeddingFormat: { type: string, maxLength: 80 }
+                  acceptedSampleCount: { type: integer, minimum: 1 }
+                  embedding: { type: string, contentEncoding: base64, writeOnly: true }
+        default: { $ref: '#/components/responses/Error' }
+  /enrollment-inferences/{enrollmentOperationId}/cancel:
+    post:
+      operationId: cancelEphemeralEnrollment
+      summary: Idempotently cancel inference and clear all transient biometric material.
+      parameters:
+        - name: enrollmentOperationId
+          in: path
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204': { description: Cancelled or already cleared. }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    backendService:
+      type: http
+      scheme: bearer
+      description: Dedicated backend-to-ML secret; never a user JWT.
+  parameters:
+    AnalysisSessionId:
+      name: analysisSessionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+  schemas:
+    Accepted:
+      type: object
+      additionalProperties: false
+      required: [accepted]
+      properties:
+        accepted: { const: true }
+  responses:
+    Error:
+      description: Stable non-sensitive error.
+      content:
+        application/json:
+          schema:
+            $ref: ./schemas/error-envelope.v1.json
