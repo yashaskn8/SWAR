@@ -51,6 +51,9 @@ local.properties
 *.onnx
 *.safetensors
 **/checkpoints/
+!ml/checkpoints/
+ml/checkpoints/*
+!ml/checkpoints/README.md
 
 # Governed ML datasets remain outside Git
 ml/data/raw/

@@ -1,0 +1,174 @@
+{
+  "schema_version": "1.0.0",
+  "registry_version": "swar-phase-n-model-registry-v1",
+  "models": [
+    {
+      "model_id": "ecapa-tdnn",
+      "model_name": "SpeechBrain ECAPA-TDNN VoxCeleb",
+      "model_version": "speechbrain-spkrec-ecapa-voxceleb@0f99f2d0",
+      "capability": "IDENTITY",
+      "source_revision": "0f99f2d0ebe89ac095bcc5903c4dd8f72b367286",
+      "source_repository": "https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb",
+      "license_identifier": "Apache-2.0",
+      "license_url": "https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb/blob/0f99f2d0ebe89ac095bcc5903c4dd8f72b367286/README.md",
+      "license_acknowledgment": "Use is accepted only under the model card's Apache-2.0 declaration and recorded source revision.",
+      "input_sample_rate_hz": 16000,
+      "input_samples": 64000,
+      "score_name": "cosine_similarity",
+      "score_direction": "HIGHER_IS_MORE_SIMILAR",
+      "score_semantics": "Raw cosine similarity to an in-memory enrolled reference; not liveness, presence, or a probability.",
+      "adapter_version": "swar-ecapa-adapter-v1",
+      "architecture": {
+        "input_size": 80,
+        "channels": [1024, 1024, 1024, 1024, 3072],
+        "kernel_sizes": [5, 3, 3, 3, 1],
+        "dilations": [1, 2, 3, 4, 1],
+        "attention_channels": 128,
+        "lin_neurons": 192
+      },
+      "checkpoint_artifact_id": "ecapa-embedding-checkpoint",
+      "artifacts": [
+        {
+          "artifact_id": "ecapa-embedding-checkpoint",
+          "relative_path": "ecapa/embedding_model.ckpt",
+          "kind": "CHECKPOINT",
+          "url": "https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb/resolve/0f99f2d0ebe89ac095bcc5903c4dd8f72b367286/embedding_model.ckpt",
+          "sha256": "0575cb64845e6b9a10db9bcb74d5ac32b326b8dc90352671d345e2ee3d0126a2",
+          "byte_size": 83316686
+        },
+        {
+          "artifact_id": "ecapa-hyperparameters",
+          "relative_path": "ecapa/hyperparams.yaml",
+          "kind": "CONFIG",
+          "url": "https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb/resolve/0f99f2d0ebe89ac095bcc5903c4dd8f72b367286/hyperparams.yaml",
+          "sha256": "6f78854fa04ba59e761437b76a2575d3aba5e5016de3e9b69f0c9a5077fb1a41",
+          "byte_size": 1919
+        }
+      ]
+    },
+    {
+      "model_id": "rawnet2",
+      "model_name": "RawNet2 LA clean specialist",
+      "model_version": "ALLA1N/rawnet2-la-clean-specialist@b21501cc",
+      "capability": "SPOOF_FAST",
+      "source_revision": "b21501cc1436bfc25f4d2e01fb5aee871bca3b3c",
+      "source_repository": "https://huggingface.co/ALLA1N/rawnet2-la-clean-specialist",
+      "license_identifier": "MIT",
+      "license_url": "https://huggingface.co/ALLA1N/rawnet2-la-clean-specialist/blob/b21501cc1436bfc25f4d2e01fb5aee871bca3b3c/README.md",
+      "license_acknowledgment": "Use is limited to the repository's declared MIT terms and research/benchmark limitations; reported scores remain uncalibrated.",
+      "input_sample_rate_hz": 16000,
+      "input_samples": 64000,
+      "score_name": "bonafide_logit",
+      "score_direction": "HIGHER_IS_MORE_BONAFIDE",
+      "score_semantics": "Class-index 1 raw bonafide logit verified from the publisher's evaluation code; not a probability.",
+      "adapter_version": "swar-rawnet2-adapter-v1",
+      "architecture": {
+        "nb_samp": 64000,
+        "first_conv": 128,
+        "in_channels": 1,
+        "filts": [128, [128, 128], [128, 512], [512, 512]],
+        "blocks": [2, 4],
+        "nb_fc_node": 1024,
+        "gru_node": 1024,
+        "nb_gru_layer": 3,
+        "nb_classes": 2
+      },
+      "checkpoint_artifact_id": "rawnet2-checkpoint",
+      "artifacts": [
+        {
+          "artifact_id": "rawnet2-source",
+          "relative_path": "rawnet2-licensed/model.py",
+          "kind": "SOURCE",
+          "url": "https://huggingface.co/ALLA1N/rawnet2-la-clean-specialist/resolve/b21501cc1436bfc25f4d2e01fb5aee871bca3b3c/model.py",
+          "sha256": "7ac04e1f2c01fd5f4a838f45e97ad9fb015bbfadf5dd265802a9fc294f955d2f",
+          "byte_size": 14690
+        },
+        {
+          "artifact_id": "rawnet2-score-semantics-source",
+          "relative_path": "rawnet2-licensed/main.py",
+          "kind": "SOURCE",
+          "url": "https://huggingface.co/ALLA1N/rawnet2-la-clean-specialist/resolve/b21501cc1436bfc25f4d2e01fb5aee871bca3b3c/main.py",
+          "sha256": "dd92c73d9f64e9721402c04d594af6c62abd766e9db30051faaf97ebe959c2bb",
+          "byte_size": 13256
+        },
+        {
+          "artifact_id": "rawnet2-checkpoint",
+          "relative_path": "rawnet2-licensed/best_model.pth",
+          "kind": "CHECKPOINT",
+          "url": "https://huggingface.co/ALLA1N/rawnet2-la-clean-specialist/resolve/b21501cc1436bfc25f4d2e01fb5aee871bca3b3c/best_model.pth",
+          "sha256": "7c7a622acef573ef67ca211f93c6337ac61cfacbd43224a616d797894fbf1ad8",
+          "byte_size": 305346970
+        }
+      ]
+    },
+    {
+      "model_id": "aasist",
+      "model_name": "AASIST",
+      "model_version": "clovaai/aasist@a04c9863",
+      "capability": "SPOOF_DEEP",
+      "source_revision": "a04c9863f63d44471dde8a6abcb3b082b07cd1d1",
+      "source_repository": "https://github.com/clovaai/aasist",
+      "license_identifier": "MIT",
+      "license_url": "https://github.com/clovaai/aasist/blob/a04c9863f63d44471dde8a6abcb3b082b07cd1d1/LICENSE",
+      "license_acknowledgment": "Use is accepted under the repository MIT license at the pinned source revision and without adopting reported benchmark claims.",
+      "input_sample_rate_hz": 16000,
+      "input_samples": 64600,
+      "score_name": "bonafide_logit",
+      "score_direction": "HIGHER_IS_MORE_BONAFIDE",
+      "score_semantics": "Class-index 1 raw bonafide logit verified from official evaluation code; not a probability.",
+      "adapter_version": "swar-aasist-adapter-v1+repeat-pad-64600-v1",
+      "architecture": {
+        "architecture": "AASIST",
+        "nb_samp": 64600,
+        "first_conv": 128,
+        "filts": [70, [1, 32], [32, 32], [32, 64], [64, 64]],
+        "gat_dims": [64, 32],
+        "pool_ratios": [0.5, 0.7, 0.5, 0.5],
+        "temperatures": [2.0, 2.0, 100.0, 100.0]
+      },
+      "checkpoint_artifact_id": "aasist-checkpoint",
+      "artifacts": [
+        {
+          "artifact_id": "aasist-source",
+          "relative_path": "aasist/AASIST.py",
+          "kind": "SOURCE",
+          "url": "https://raw.githubusercontent.com/clovaai/aasist/a04c9863f63d44471dde8a6abcb3b082b07cd1d1/models/AASIST.py",
+          "sha256": "9e0d3e80937dd0577beea7883098465a479da23a198ebc0d712abcc59b0bec50",
+          "byte_size": 18960
+        },
+        {
+          "artifact_id": "aasist-config",
+          "relative_path": "aasist/AASIST.conf",
+          "kind": "CONFIG",
+          "url": "https://raw.githubusercontent.com/clovaai/aasist/a04c9863f63d44471dde8a6abcb3b082b07cd1d1/config/AASIST.conf",
+          "sha256": "c25023331685027cce90e1b9a0d2df10aa04b2a27d9b27d5afa36e6815b0fe76",
+          "byte_size": 997
+        },
+        {
+          "artifact_id": "aasist-evaluation-source",
+          "relative_path": "aasist/main.py",
+          "kind": "SOURCE",
+          "url": "https://raw.githubusercontent.com/clovaai/aasist/a04c9863f63d44471dde8a6abcb3b082b07cd1d1/main.py",
+          "sha256": "ac920ce8f5eb66e02ce40ff0ee4d3d5cf3b94c24a03c4e2e4c04726f64917b3e",
+          "byte_size": 15167
+        },
+        {
+          "artifact_id": "aasist-label-source",
+          "relative_path": "aasist/data_utils.py",
+          "kind": "SOURCE",
+          "url": "https://raw.githubusercontent.com/clovaai/aasist/a04c9863f63d44471dde8a6abcb3b082b07cd1d1/data_utils.py",
+          "sha256": "788c9151e7f9c072dea09bab661ff77bf855b0b99edf9b79bcaa69daa1151192",
+          "byte_size": 2929
+        },
+        {
+          "artifact_id": "aasist-checkpoint",
+          "relative_path": "aasist/AASIST.pth",
+          "kind": "CHECKPOINT",
+          "url": "https://raw.githubusercontent.com/clovaai/aasist/a04c9863f63d44471dde8a6abcb3b082b07cd1d1/models/weights/AASIST.pth",
+          "sha256": "51d2d9cf0738172f61e2a384ec50a54a55363240f67c971ed55a92435bc1a1c0",
+          "byte_size": 1281532
+        }
+      ]
+    }
+  ]
+}

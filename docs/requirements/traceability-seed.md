@@ -215,3 +215,21 @@ code.
 | Schema-enforced metric-free blocker and reproducible Phase O-compatible records | [`result_schema.py`](../../ml/evaluation/result_schema.py) and [baseline tests](../../ml/tests/unit/baselines/) | MLR-SPOOF-001, MLR-OOD-001; AC-A-002, AC-ML-007..008 |
 
 Concrete command outcomes are recorded in [Phase M exit-gate evidence](../implementation/phase-status.md#phase-m-exit-gate-evidence).
+
+## 13. Phase N real-model integration evidence
+
+Phase N integrates pinned real architectures and checkpoints behind technical-evidence interfaces
+without promoting a threshold, calibration, scientific result, serving endpoint, business policy,
+or frontend behavior.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| Shared verified load/readiness/timeout/infer/cleanup lifecycle and versioned raw-score result metadata | [Model interfaces](../../ml/app/models/interfaces.py) and [registry](../../ml/app/models/registry.py) | FR-ID-003, FR-SPOOF-003, MLR-GOV-002, MLR-LAT-001; AC-ML-001..003 |
+| In-memory enrollment embedding, normalized cosine similarity, and explicit zeroization | [ECAPA adapter](../../ml/app/models/ecapa.py) | FR-ID-001..004, NFR-PRIV-002; AC-ML-001 |
+| Pinned class-index-one bona fide logit semantics on the fast path | [RawNet2 adapter](../../ml/app/models/rawnet2.py) | FR-SPOOF-001, FR-SPOOF-003, MLR-SPOOF-001; AC-ML-002 |
+| Pinned deep-path semantics and deterministic official repeat-padding compatibility | [AASIST adapter](../../ml/app/models/aasist.py) | FR-SPOOF-002..003, MLR-SPOOF-002, MLR-GOV-002; AC-ML-003..004 |
+| Immutable source/checkpoint/license/hash/input/score register and acknowledged atomic acquisition | [Model registry](../../ml/config/model_registry.yaml), [fetcher](../../ml/scripts/fetch_checkpoints.py), and [checkpoint contract](../../ml/checkpoints/README.md) | MLR-GOV-001..002, NFR-SEC-003; AC-ML-005 |
+| Generated non-human CPU compatibility experiment with versions/hashes and no metric claim | [Experiment runner](../../ml/experiments/run_experiment.py) and [integration notes](../evaluation/model-integration-notes.md) | MLR-LAT-001, NFR-PRIV-002; AC-ML-001..003 |
+| Missing/hash/architecture/device/timeout/dtype/shape/direction/cleanup and real-checkpoint verification | [Phase N model tests](../../ml/tests/unit/models/) | MLR-ID-001, MLR-SPOOF-001..002, MLR-GOV-002; AC-ML-001..005 |
+
+Concrete command outcomes are recorded in [Phase N exit-gate evidence](../implementation/phase-status.md#phase-n-exit-gate-evidence).

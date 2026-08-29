@@ -11,8 +11,12 @@ dependencies = [
     "fastapi==0.141.1",
     "numpy==2.4.6",
     "pydantic==2.13.4",
+    "PyYAML==6.0.3",
     "soundfile==0.14.0",
     "soxr==1.1.0",
+    "speechbrain==1.1.1",
+    "torch==2.13.0",
+    "torchaudio==2.11.0",
     "uvicorn==0.52.4",
 ]
 
@@ -24,12 +28,15 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["app*", "baselines*", "evaluation*", "training*"]
+include = ["app*", "baselines*", "evaluation*", "experiments*", "training*"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers -q"
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "real_models: requires locally fetched, hash-verified real model artifacts",
+]
 
 [tool.ruff]
 line-length = 100
