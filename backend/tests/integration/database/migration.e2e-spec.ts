@@ -35,7 +35,7 @@ describe.skipIf(!databaseEnabled)('Phase F migration and seed contract', () => {
   beforeAll(async () => prisma.onModuleInit());
   afterAll(async () => prisma.onModuleDestroy());
 
-  test('applies one clean migration containing every persistent entity', async () => {
+  test('applies every checked-in migration and contains every persistent entity', async () => {
     const tables = await prisma.client.$queryRaw<Array<{ table_name: string }>>`
       SELECT table_name
       FROM information_schema.tables
@@ -51,7 +51,12 @@ describe.skipIf(!databaseEnabled)('Phase F migration and seed contract', () => {
       FROM "_prisma_migrations"
       WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL
     `;
-    expect(migrations[0]?.count).toBe(1n);
+    const migrationDirectories = (
+      await readdir(resolve('prisma', 'migrations'), {
+        withFileTypes: true,
+      })
+    ).filter((entry) => entry.isDirectory());
+    expect(migrations[0]?.count).toBe(BigInt(migrationDirectories.length));
   });
 
   test('installs the database-native lifecycle and partial uniqueness protections', async () => {
@@ -176,3 +181,5 @@ describe.skipIf(!databaseEnabled)('Phase F migration and seed contract', () => {
     expect(JSON.stringify(plan)).toContain('Alert_organizationId_status_nextAttemptAt_idx');
   });
 });
+import { readdir } from 'node:fs/promises';
+import { resolve } from 'node:path';

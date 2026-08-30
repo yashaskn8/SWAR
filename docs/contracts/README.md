@@ -8,7 +8,8 @@ This directory contains SWAR's authoritative transport contracts:
 
 - [REST and callback OpenAPI](public-rest.openapi.yaml) is generated from NestJS controllers and checked in as a drift-tested snapshot.
 - [Security WebSocket AsyncAPI](security-events.asyncapi.yaml) defines subscription, acknowledgement, replay, and outbound event payloads.
-- [Backend-to-ML OpenAPI](ml-control.openapi.yaml) defines analysis and ephemeral-enrollment control.
+- [Backend-to-ML OpenAPI](ml-control.openapi.yaml) defines signed analysis and ephemeral-enrollment
+  control; analysis create uses the exact-binding v2 schema while v1 remains historical.
 - [ML-to-backend OpenAPI](ml-evidence.openapi.yaml) defines authenticated, bound, idempotent evidence ingestion.
 - [JSON Schemas](schemas/) define shared error, security-event, ML-control, and evidence payloads.
 - [Versioning](versioning.md) defines compatibility, replay, optional-field, enum, and score semantics.

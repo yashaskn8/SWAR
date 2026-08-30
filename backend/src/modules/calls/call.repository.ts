@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import {
   AnalysisSessionStatus,
   CallStatus,
+  type EvidenceMode,
   ParticipantStatus,
   TrackBindingStatus,
   TrackStatus,
@@ -411,6 +412,7 @@ export class CallRepository {
       mimeType?: string;
       analysisIdempotencyKey: string;
       analysisExpiresAt: Date;
+      evidenceMode?: EvidenceMode;
       voiceprintId?: string;
     },
   ): Promise<BindTrackResult> {
@@ -544,6 +546,7 @@ export class CallRepository {
               : requireUuid(input.voiceprintId, 'voiceprintId'),
           idempotencyKey: requireText(input.analysisIdempotencyKey, 'analysisIdempotencyKey', 128),
           bindingRevision: revision,
+          ...(input.evidenceMode === undefined ? {} : { evidenceMode: input.evidenceMode }),
           status: AnalysisSessionStatus.AUTHORIZED,
           authorizedAt: now,
           expiresAt: input.analysisExpiresAt,

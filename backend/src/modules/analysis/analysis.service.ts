@@ -6,6 +6,8 @@ import {
   type AnalysisSession,
 } from '../../generated/prisma/client';
 import { MlControlPort } from '../../integrations/ml/ml-control.port';
+import { LiveKitPort } from '../../integrations/livekit/livekit.port';
+import { ConfigurationService } from '../../config/configuration';
 import { PersistenceConflictError } from '../../database/database.errors';
 import { AuditService } from '../audit/audit.service';
 import { CallRepository } from '../calls/call.repository';
@@ -20,6 +22,8 @@ export class AnalysisService {
     private readonly enrollment: EnrollmentRepository,
     private readonly audit: AuditService,
     @Optional() @Inject(MlControlPort) private readonly ml?: MlControlPort,
+    @Optional() private readonly configuration?: ConfigurationService,
+    @Optional() @Inject(LiveKitPort) private readonly liveKit?: LiveKitPort,
   ) {}
 
   async start(input: {
@@ -85,8 +89,22 @@ export class AnalysisService {
       });
     }
     try {
-      if (this.ml === undefined) throw new Error('ML control provider unavailable');
+      if (this.ml === undefined || this.configuration === undefined || this.liveKit === undefined) {
+        throw new Error('ML control provider unavailable');
+      }
+      const remainingSeconds = Math.floor((grant.session.expiresAt.getTime() - Date.now()) / 1_000);
+      if (remainingSeconds < 30) throw new Error('Analysis grant lifetime is too short');
+      const mediaGrant = await this.liveKit.issueParticipantGrant({
+        roomName: grant.call.roomName,
+        participantIdentity: `swar-ml:${grant.session.id}`,
+        profile: 'ML_SUBSCRIBER',
+        ttlSeconds: Math.min(
+          remainingSeconds,
+          this.configuration.values.dependencies.liveKitParticipantGrantTtlSeconds,
+        ),
+      });
       await this.ml.startAnalysis({
+        organizationId: input.organizationId,
         sessionId: grant.session.id,
         callId: grant.call.id,
         roomName: grant.call.roomName,
@@ -94,6 +112,9 @@ export class AnalysisService {
         trackSid: grant.mediaTrack.trackSid,
         bindingId: grant.binding.id,
         bindingRevision: grant.binding.revision,
+        evidenceMode: grant.session.evidenceMode,
+        grantToken: mediaGrant.token,
+        grantExpiresAt: mediaGrant.expiresAt,
         expiresAt: grant.session.expiresAt,
         ...(grant.session.voiceprintId === null
           ? {}

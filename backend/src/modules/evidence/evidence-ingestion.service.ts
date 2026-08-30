@@ -4,6 +4,7 @@ import {
   AnalysisSessionStatus,
   CallStatus,
   EvidenceAcceptanceStatus,
+  EvidenceMode,
   EvidenceReadiness,
   EvidenceType,
   ScoreDirection,
@@ -35,7 +36,10 @@ function invalid(fields: string[]): never {
 }
 
 function assertSemantics(input: MlEvidenceDto): void {
-  if (input.schemaVersion !== '1.0.0') invalid(['schemaVersion']);
+  if (!['1.0.0', '1.1.0'].includes(input.schemaVersion)) invalid(['schemaVersion']);
+  if (input.schemaVersion === '1.1.0' && input.evidenceMode === undefined) {
+    invalid(['evidenceMode']);
+  }
   const ready =
     input.eventType === MlEvidenceEventType.FAST || input.eventType === MlEvidenceEventType.DEEP;
   if (BigInt(input.windowEndMs) < BigInt(input.windowStartMs)) invalid(['windowEndMs']);
@@ -108,6 +112,14 @@ export class EvidenceIngestionService {
         HttpStatus.CONFLICT,
       );
     }
+    const sessionMode = grant.session.evidenceMode ?? EvidenceMode.SIMULATED;
+    if (input.evidenceMode !== undefined && input.evidenceMode !== sessionMode) {
+      throw new ApiError(
+        'EVIDENCE_MODE_CONFLICT',
+        'Evidence mode does not match the authorized analysis session.',
+        HttpStatus.CONFLICT,
+      );
+    }
     const acceptanceStatus =
       terminalCalls.has(grant.call.status) || terminalSessions.has(grant.session.status)
         ? EvidenceAcceptanceStatus.STALE
@@ -125,6 +137,7 @@ export class EvidenceIngestionService {
       ...(input.modelVersionId === undefined ? {} : { modelVersionId: input.modelVersionId }),
       idempotencyKey: input.eventId,
       schemaVersion: input.schemaVersion,
+      evidenceMode: sessionMode,
       eventSequence: BigInt(input.eventSequence),
       windowSequence: BigInt(input.windowSequence),
       revision: input.revision,

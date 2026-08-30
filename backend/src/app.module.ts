@@ -12,6 +12,7 @@ import {
 } from './common/validation/validation.config';
 import { ConfigurationModule } from './config/configuration';
 import { PrismaModule } from './database/prisma.module';
+import { MlIntegrationModule } from './integrations/ml/ml-integration.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CallsModule } from './modules/calls/calls.module';
 import { HealthModule } from './modules/health/health.module';
@@ -28,6 +29,7 @@ import { GovernanceModule } from './modules/governance/governance.module';
     ConfigurationModule,
     LoggerModule,
     PrismaModule,
+    MlIntegrationModule,
     IdempotencyModule,
     ApiRateLimitModule,
     AuthModule,

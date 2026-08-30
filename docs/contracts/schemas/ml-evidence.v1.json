@@ -9,6 +9,7 @@
     "eventType": { "enum": ["FAST", "DEEP", "INSUFFICIENT_EVIDENCE", "PIPELINE_ERROR"] },
     "eventId": { "type": "string", "format": "uuid" },
     "schemaVersion": { "const": "1.0.0" },
+    "evidenceMode": { "enum": ["SIMULATED", "SHADOW", "CALIBRATED"] },
     "organizationId": { "type": "string", "format": "uuid" },
     "callId": { "type": "string", "format": "uuid" },
     "analysisSessionId": { "type": "string", "format": "uuid" },

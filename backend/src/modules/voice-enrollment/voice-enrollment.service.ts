@@ -56,6 +56,7 @@ export class VoiceEnrollmentService {
       const result = await this.ml.inferEnrollment({
         enrollmentOperationId: input.enrollmentOperationId,
         consentId: consent.id,
+        expectedModelVersionId: input.expectedModelVersionId,
         samples: input.audio.view(),
       });
       embedding = result.embedding;

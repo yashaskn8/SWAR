@@ -21,6 +21,18 @@ The machine-readable [`calibration.json`](../../ml/config/calibration.json) ther
 `BLOCKED_VALIDATION_REQUIRED`, contains no manifest hash, calibrator, fusion weight, probability,
 operating threshold, or promotion decision, and cannot authorize Phase P or Phase Q.
 
+## Scientific exit criteria
+
+- [ ] Scientific speaker/spoof/OOD/robustness/latency metrics are measured from approved,
+  traceable governed data.
+- [ ] Calibration and operating points are fitted on approved validation evidence and verified on
+  untouched holdout/OOD evidence.
+- [ ] Model/calibration promotion approval is recorded by the authorized reviewers.
+
+These final three criteria are intentionally unchecked. Phase P engineering may exercise only
+explicit fixture or shadow paths while this scientific gate remains blocked; it is not a production
+promotion decision.
+
 ## Implemented fail-closed framework
 
 - Speaker verification metrics record FAR, FRR, and EER with explicit genuine/impostor semantics,

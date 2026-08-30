@@ -4,6 +4,7 @@ import {
   AnalysisSessionStatus,
   CallStatus,
   EvidenceAcceptanceStatus,
+  EvidenceMode,
   EvidenceType,
   ScoreDirection,
 } from '../../src/generated/prisma/client';
@@ -116,5 +117,43 @@ describe('Phase J service authentication and evidence binding', () => {
     await expect(service.ingest({ ...ready, schemaVersion: '2.0.0' })).rejects.toMatchObject({
       code: 'EVIDENCE_CONTRACT_INVALID',
     });
+  });
+
+  it('rejects evidence-mode substitution against the authoritative session', async () => {
+    const findAnalysisGrantContext = vi.fn().mockResolvedValue({
+      call: {
+        id: '018f0000-0000-7000-8000-000000000003',
+        status: CallStatus.ACTIVE,
+      },
+      session: {
+        status: AnalysisSessionStatus.ACTIVE,
+        evidenceMode: EvidenceMode.SHADOW,
+      },
+      binding: { id: '018f0000-0000-7000-8000-000000000005' },
+    });
+    const service = new EvidenceIngestionService(
+      { findAnalysisGrantContext } as unknown as CallRepository,
+      { record: vi.fn() } as unknown as EvidenceRepository,
+    );
+    await expect(
+      service.ingest({
+        eventType: MlEvidenceEventType.PIPELINE_ERROR,
+        eventId: '018f0000-0000-7000-8000-000000000001',
+        schemaVersion: '1.1.0',
+        evidenceMode: EvidenceMode.CALIBRATED,
+        organizationId: '018f0000-0000-7000-8000-000000000002',
+        callId: '018f0000-0000-7000-8000-000000000003',
+        analysisSessionId: '018f0000-0000-7000-8000-000000000004',
+        trackBindingId: '018f0000-0000-7000-8000-000000000005',
+        eventSequence: '1',
+        windowSequence: '1',
+        revision: 0,
+        evidenceType: EvidenceType.PIPELINE_ERROR,
+        windowStartMs: '0',
+        windowEndMs: '0',
+        observedAt: '2030-01-01T00:00:04Z',
+        errorCode: 'FIXTURE_FAILURE',
+      }),
+    ).rejects.toMatchObject({ code: 'EVIDENCE_MODE_CONFLICT' });
   });
 });

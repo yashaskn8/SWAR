@@ -2,7 +2,8 @@
 
 Last updated: 2026-08-30
 Contract: `AGENTS.md` 1.0.0  
-Status values: `NOT_STARTED`, `IN_PROGRESS`, `COMPLETE`, `BLOCKED`.
+Status values: `NOT_STARTED`, `IN_PROGRESS`, `COMPLETE`, `BLOCKED`,
+`IMPLEMENTED_NOT_PROMOTED`.
 
 Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED + VERIFIED` may be marked `COMPLETE`. A completed dependency unlocks the next phase but does not start it.
 
@@ -23,7 +24,7 @@ Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED 
 | M | ML baseline/development loop | H, J, K, L | COMPLETE | Dual-gated non-scientific stub with production startup rejection; authenticated/idempotent FAST/DEEP/insufficient/error callback loop; deterministic Phase K/L-bound spectral/logistic baseline and metric-free data blocker; 12/12 focused Phase M ML, 75/75 complete ML, 4/4 backend loop, 57/57 active backend, 13/13 contract, 10/10 native database, and 11/11 native auth tests passed on 2026-08-29. |
 | N | Real model integration | K, L, M | COMPLETE | Three hash-verified licensed ECAPA/RawNet2/AASIST adapters; versioned score semantics and lifecycle; deterministic non-human CPU compatibility experiment; 89/89 ML tests including real checkpoint smoke plus all Phase N static/documentation/boundary/security checks passed on 2026-08-29. |
 | O | Evaluation/calibration | K, L, N | BLOCKED | Fail-closed evaluation/calibration framework and 18/18 focused tests pass; no approved external governed data root, non-example frozen manifest, data-steward approval, measured score records, or target-hardware profile exists, so no metric/threshold/calibration/promotion is claimed and P remains locked. |
-| P | ML serving/media subscriber | H, J, L, N, O | NOT_STARTED | - |
+| P | ML serving/media subscriber | H, J, L, N, O | IMPLEMENTED_NOT_PROMOTED | Authenticated exact-binding NestJS/FastAPI control, restricted LiveKit subscriber, bounded queues/retries/timeouts, idempotent evidence delivery, evidence modes, fail-closed production readiness, graceful cleanup, migration/contracts, and Phase P security/failure tests are implemented. Scientific promotion remains blocked by Phase O. |
 | Q | Risk engine/interventions | F, G, I, J, O, P | NOT_STARTED | - |
 | R | Frontend foundation | Q backend-completion PASS; J contracts | NOT_STARTED | - |
 | S | Frontend workflows | J, Q, R | NOT_STARTED | - |
@@ -41,7 +42,16 @@ Phases A through N are complete. Phase O's fail-closed software and documentatio
 implemented and tested, but scientific execution remains `BLOCKED` until an approved external
 governed data root, non-example frozen manifest, data-steward approval, measured exact-version score
 records, and named target-hardware profile satisfy its gate. No threshold, calibrator, probability,
-metric result, latency target, or model profile is promoted. Phase P and Phase Q remain locked.
+metric result, latency target, or model profile is promoted. The user explicitly authorized Phase P
+engineering with fixture/shadow evidence despite that scientific blocker; Phase P is implemented but
+cannot be production-promoted or marked complete. Phase Q remains `NOT_STARTED` and locked.
+
+```text
+Phase O scientific calibration: BLOCKED
+Phase P engineering: IMPLEMENTED_NOT_PROMOTED
+Phase P production activation: BLOCKED_BY_PHASE_O
+Phase Q: NOT_STARTED
+```
 
 ## Phase A exit-gate evidence
 
@@ -294,5 +304,61 @@ metric result, latency target, or model profile is promoted. Phase P and Phase Q
   speaker/spoof/calibration/subgroup/OOD/codec/noise/language results; failed/insufficient sample
   coverage; named target-hardware cold/warm latency, queue, memory and concurrency distributions;
   authorized operating-point and promotion decision. All remain `VALIDATION REQUIRED`.
-- Gate verdict: `BLOCKED`, not `COMPLETE`. Phase P is not unlocked, Phase Q is not started, and the
-  Phase R backend-completion gate remains locked.
+- Gate verdict: `BLOCKED`, not `COMPLETE`. Phase P's scientific/production dependency is not
+  unlocked; the user authorized only the engineering implementation described below. Phase Q is
+  not started, and the Phase R backend-completion gate remains locked.
+
+## Phase P engineering evidence
+
+- Dependency decision: `IMPLEMENTED_NOT_PROMOTED` - Phase H/J/L/N dependencies remain complete,
+  while Phase O remains scientifically `BLOCKED`. The user explicitly authorized non-promoted
+  Phase P engineering with fixtures/shadow evidence. This exception does not satisfy the frozen
+  scientific dependency or authorize production activation.
+- Authenticated control: PASS - NestJS sends every analysis control request with the dedicated
+  internal secret and an HMAC-SHA256 signature over method, path, timestamp, nonce, idempotency key,
+  and body hash. FastAPI rejects wrong service/secret/signature, expired timestamps, nonce replay,
+  idempotency conflict, and expired analysis grants with stable non-sensitive codes.
+- Media binding: PASS - the v2 request binds `organizationId`, call/session/binding IDs and revision,
+  evidence mode, LiveKit room, authorized participant identity, exact audio track SID, short-lived
+  subscribe-only grant, and expiry. Auto-subscription is disabled; wrong room, participant, track,
+  and non-audio/substituted publications are rejected or unsubscribed. Track arrival and reconnects
+  are bounded.
+- Modes/readiness: PASS for engineering - `SIMULATED`, `SHADOW`, and `CALIBRATED` persist on the
+  authoritative session/evidence path. Simulated evidence is demo-labelled; shadow evidence is
+  no-action; mode substitution fails. Production readiness remains HTTP 503 when Phase O is
+  blocked or calibration/promotion, model/checkpoint/registry, or preprocessing evidence is absent
+  or invalid. No raw score is promoted to a probability or action.
+- Reliability: PASS - per-call frame/window/evidence queues are bounded and use a clear-on-drop
+  oldest-item policy; LiveKit reconnects, NestJS control, inference, and evidence callbacks have
+  bounded timeouts/retries/backoff. Evidence event IDs and callback idempotency keys are stable;
+  duplicate delivery is cached, terminal evidence remains `STALE`, and late post-close evidence is
+  dropped.
+- Privacy/ownership: PASS - FastAPI has no PostgreSQL/application repository dependency and owns no
+  tenancy or policy. Frames, normalized windows, model inputs/tensors, transient embeddings, queue
+  contents, and caches are cleared on eviction, completion, cancellation, exception, timeout, stop,
+  and shutdown. Telemetry exposes only queue/retry/latency/readiness reason categories and excludes
+  audio, embeddings, tokens, tenant/call IDs, and private content.
+- Focused tests: PASS - 12/12 ML secure-serving/readiness tests and 7/7 focused backend control and
+  evidence-auth tests cover credential failures, replay, cross-tenant/track/mode substitution,
+  overload, model/callback outage, retry, duplicate delivery, LiveKit room/participant/track binding
+  and reconnect, cancellation, shutdown, cleanup, and blocked production readiness.
+- Full static/regression gates: PASS - complete ML tests passed 116 with one conditional real-model
+  smoke skip; Ruff lint/format, byte compilation, locked dependency sync, and `pip check` passed.
+  Backend Prettier, ESLint, strict TypeScript, Prisma generation/validation, Nest build, 62/62 active
+  ordinary tests, and 14/14 contract tests passed. The generated REST snapshot is aligned.
+- Native PostgreSQL: PASS - both migrations applied to fresh PostgreSQL 18 clusters; seed replay,
+  migration status/no-op replay, and 10/10 database tests passed, followed by 11/11 native
+  authentication/RBAC/tenant-isolation tests. Each temporary server stopped and its cluster was
+  removed. The inherited `pg@8.23.0` pre-9 concurrent-query deprecation warning remains.
+- Documentation/boundaries/security: PASS with inherited audit item - documentation checks passed
+  for 56 Markdown files; positive and negative repository/no-container boundaries passed; no
+  frontend, Phase Q risk/intervention, raw-audio persistence, secret, private content, checkpoint,
+  or Docker artifact was added. Python `pip-audit` found no known vulnerability after the local
+  virtual-environment bootstrap `pip` was updated to 26.2; the local editable `swar-ml` package is
+  not a PyPI distribution and was explicitly reported as unauditable by name.
+- Dependency audit: `VALIDATION REQUIRED` - `npm audit` still reports the inherited three high
+  severity instances of GHSA-ggr8-5vv4-36mx through Prisma 7.10.0's CLI/config dependency on
+  `deepmerge-ts@7.1.5`. The offered command is a breaking forced Prisma 6 downgrade, so it was not
+  applied or misreported as a pass.
+- Gate verdict: `IMPLEMENTED_NOT_PROMOTED`. Production activation is `BLOCKED_BY_PHASE_O`; Phase Q
+  is `NOT_STARTED`, not unlocked, and the Phase R backend-completion gate remains locked.

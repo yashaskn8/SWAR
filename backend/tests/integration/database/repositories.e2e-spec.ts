@@ -10,6 +10,7 @@ import { PrismaService } from '../../../src/database/prisma.service';
 import { TransactionService } from '../../../src/database/transaction.service';
 import {
   AlertChannel,
+  EvidenceMode,
   EvidenceReadiness,
   EvidenceType,
   InterventionStatus,
@@ -173,6 +174,7 @@ describe.skipIf(!databaseEnabled)('Phase F tenant repositories', () => {
       windowSequence: 1n,
       revision: 0,
       evidenceType: EvidenceType.PIPELINE_ERROR,
+      evidenceMode: EvidenceMode.SHADOW,
       readiness: EvidenceReadiness.ERROR,
       windowStartMs: 0n,
       windowEndMs: 0n,

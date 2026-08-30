@@ -80,17 +80,17 @@ class PcmNormalizer:
             raise AudioPipelineError(AudioErrorCode.UNSUPPORTED_FORMAT)
         self._validate_media_metadata(envelope.sample_rate_hz, envelope.channels)
         try:
-            payload = bytes(envelope.payload)
+            payload = memoryview(envelope.payload).cast("B")
         except (TypeError, ValueError) as error:
             raise AudioPipelineError(AudioErrorCode.UNSUPPORTED_FORMAT) from error
         if not payload:
             raise AudioPipelineError(AudioErrorCode.EMPTY_AUDIO)
-        if len(payload) > self.config.input.max_input_bytes:
+        if payload.nbytes > self.config.input.max_input_bytes:
             raise AudioPipelineError(AudioErrorCode.PAYLOAD_TOO_LARGE)
         frame_width = bytes_per_sample * envelope.channels
-        if len(payload) % frame_width:
+        if payload.nbytes % frame_width:
             raise AudioPipelineError(AudioErrorCode.INVALID_PCM_LENGTH)
-        frame_count = len(payload) // frame_width
+        frame_count = payload.nbytes // frame_width
         if envelope.samples_per_channel is not None and envelope.samples_per_channel != frame_count:
             raise AudioPipelineError(AudioErrorCode.DECLARED_LENGTH_MISMATCH)
         if frame_count * 1000 > envelope.sample_rate_hz * self.config.input.max_frame_duration_ms:

@@ -1,4 +1,5 @@
 export type SwarEnvironment = 'development' | 'test' | 'production';
+export type MlEvidenceMode = 'SIMULATED' | 'SHADOW' | 'CALIBRATED';
 
 export interface ApplicationConfiguration {
   runtime: {
@@ -31,6 +32,10 @@ export interface ApplicationConfiguration {
   };
   dependencies: {
     mlInternalUrl: string;
+    mlEvidenceMode: MlEvidenceMode;
+    mlControlMaximumAttempts: number;
+    mlControlRetryBackoffMs: number;
+    internalAuthClockSkewSeconds: number;
     liveKitUrl: string;
     httpTimeoutMs: number;
     webSocketTimeoutMs: number;
@@ -143,6 +148,15 @@ function parseEnvironmentName(reader: Reader): SwarEnvironment {
   return value as SwarEnvironment;
 }
 
+function parseEvidenceMode(reader: Reader): MlEvidenceMode {
+  const value = reader.text('ML_EVIDENCE_MODE', 20).toUpperCase();
+  if (!['SIMULATED', 'SHADOW', 'CALIBRATED'].includes(value)) {
+    reader.invalid.push('ML_EVIDENCE_MODE');
+    return 'SHADOW';
+  }
+  return value as MlEvidenceMode;
+}
+
 function parseCors(
   reader: Reader,
   source: NodeJS.ProcessEnv,
@@ -239,6 +253,10 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
     },
     dependencies: {
       mlInternalUrl: reader.url('ML_INTERNAL_URL', ['http:', 'https:'], ['https:']),
+      mlEvidenceMode: parseEvidenceMode(reader),
+      mlControlMaximumAttempts: reader.integer('ML_CONTROL_MAX_ATTEMPTS', 1, 5),
+      mlControlRetryBackoffMs: reader.integer('ML_CONTROL_RETRY_BACKOFF_MS', 10, 5_000),
+      internalAuthClockSkewSeconds: reader.integer('INTERNAL_AUTH_CLOCK_SKEW_SECONDS', 1, 300),
       liveKitUrl: reader.url('LIVEKIT_URL', ['ws:', 'wss:'], ['wss:']),
       httpTimeoutMs: reader.integer('DOWNSTREAM_HTTP_TIMEOUT_MS', 100, 30_000),
       webSocketTimeoutMs: reader.integer('DOWNSTREAM_WEBSOCKET_TIMEOUT_MS', 100, 30_000),
@@ -296,6 +314,12 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
     configuration.api.enrollmentMaximumTotalBytes < configuration.api.enrollmentMaximumSampleBytes
   ) {
     reader.invalid.push('ENROLLMENT_MAX_TOTAL_BYTES');
+  }
+  if (
+    configuration.runtime.environment === 'production' &&
+    configuration.dependencies.mlEvidenceMode !== 'CALIBRATED'
+  ) {
+    reader.invalid.push('ML_EVIDENCE_MODE');
   }
   if (reader.invalid.length > 0) throw new EnvironmentValidationError(reader.invalid);
   return configuration;

@@ -168,6 +168,12 @@ enum EvidenceAcceptanceStatus {
   REJECTED
 }
 
+enum EvidenceMode {
+  SIMULATED
+  SHADOW
+  CALIBRATED
+}
+
 enum RiskState {
   VERIFIED
   UNVERIFIED
@@ -596,6 +602,7 @@ model AnalysisSession {
   voiceprintId    String?               @db.Uuid
   idempotencyKey  String                @db.VarChar(128)
   bindingRevision Int
+  evidenceMode    EvidenceMode          @default(SHADOW)
   status          AnalysisSessionStatus @default(AUTHORIZED)
   authorizedAt    DateTime              @db.Timestamptz(6)
   startedAt       DateTime?             @db.Timestamptz(6)
@@ -652,6 +659,7 @@ model EvidenceEvent {
   supersedesEvidenceId String?                  @db.Uuid
   idempotencyKey       String                   @db.VarChar(128)
   schemaVersion        String                   @db.VarChar(40)
+  evidenceMode         EvidenceMode             @default(SHADOW)
   eventSequence        BigInt
   windowSequence       BigInt
   revision             Int

@@ -35,6 +35,7 @@ paths:
                   eventType: FAST
                   eventId: 018f0000-0000-7000-8000-000000000001
                   schemaVersion: 1.0.0
+                  evidenceMode: SIMULATED
                   organizationId: 018f0000-0000-7000-8000-000000000002
                   callId: 018f0000-0000-7000-8000-000000000003
                   analysisSessionId: 018f0000-0000-7000-8000-000000000004

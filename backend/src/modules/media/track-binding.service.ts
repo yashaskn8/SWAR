@@ -3,6 +3,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   AuditOutcome,
   CallStatus,
+  EvidenceMode,
   ParticipantRole,
   type AnalysisSession,
 } from '../../generated/prisma/client';
@@ -148,6 +149,7 @@ export class TrackBindingService {
         event.occurredAt.getTime() +
           this.configuration.values.dependencies.analysisSessionTtlSeconds * 1_000,
       ),
+      evidenceMode: EvidenceMode[this.configuration.values.dependencies.mlEvidenceMode],
       ...(voiceprint === null ? {} : { voiceprintId: voiceprint.id }),
     });
     for (const sessionId of bound.supersededAnalysisSessionIds) {

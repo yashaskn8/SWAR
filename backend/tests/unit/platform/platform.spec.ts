@@ -59,6 +59,27 @@ describe('Phase H platform units', () => {
     );
   });
 
+  it('rejects simulated and shadow evidence modes in production configuration', () => {
+    const production = {
+      SWAR_ENV: 'production',
+      PUBLIC_API_URL: 'https://api.example.test/api/v1',
+      SECURITY_WS_URL: 'wss://api.example.test/ws/security',
+      ML_INTERNAL_URL: 'https://ml.example.test',
+      LIVEKIT_URL: 'wss://livekit.example.test',
+      CORS_ALLOWED_ORIGINS: 'https://dashboard.example.test',
+      DATABASE_URL: 'postgresql://swar:password@example.test/swar',
+    };
+    expect(() =>
+      parseEnvironment(validTestEnvironment({ ...production, ML_EVIDENCE_MODE: 'SIMULATED' })),
+    ).toThrow(/ML_EVIDENCE_MODE/u);
+    expect(() =>
+      parseEnvironment(validTestEnvironment({ ...production, ML_EVIDENCE_MODE: 'SHADOW' })),
+    ).toThrow(/ML_EVIDENCE_MODE/u);
+    expect(() =>
+      parseEnvironment(validTestEnvironment({ ...production, ML_EVIDENCE_MODE: 'CALIBRATED' })),
+    ).not.toThrow();
+  });
+
   it('prevents the backend configuration module from starting with an invalid environment', async () => {
     const invalid = validTestEnvironment({ JWT_ACCESS_SECRET: 'short-private-value' });
     await expect(

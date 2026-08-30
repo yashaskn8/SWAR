@@ -1,4 +1,5 @@
 export interface MlAnalysisGrant {
+  organizationId: string;
   sessionId: string;
   callId: string;
   roomName: string;
@@ -6,6 +7,9 @@ export interface MlAnalysisGrant {
   trackSid: string;
   bindingId: string;
   bindingRevision: number;
+  evidenceMode: 'SIMULATED' | 'SHADOW' | 'CALIBRATED';
+  grantToken: string;
+  grantExpiresAt: Date;
   expiresAt: Date;
   voiceprintId?: string;
 }
@@ -25,6 +29,7 @@ export abstract class MlControlPort {
   abstract inferEnrollment(input: {
     enrollmentOperationId: string;
     consentId: string;
+    expectedModelVersionId: string;
     samples: readonly Uint8Array[];
   }): Promise<MlEnrollmentResult>;
 

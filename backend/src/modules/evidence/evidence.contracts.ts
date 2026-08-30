@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  Equals,
   IsArray,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -15,7 +15,7 @@ import {
   Min,
 } from 'class-validator';
 
-import { EvidenceType, ScoreDirection } from '../../generated/prisma/client';
+import { EvidenceMode, EvidenceType, ScoreDirection } from '../../generated/prisma/client';
 
 export enum MlEvidenceEventType {
   FAST = 'FAST',
@@ -30,9 +30,13 @@ export class MlEvidenceDto {
   eventType!: MlEvidenceEventType;
 
   @ApiProperty({ format: 'uuid' }) @IsUUID() eventId!: string;
-  @ApiProperty({ enum: ['1.0.0'] })
-  @Equals('1.0.0')
+  @ApiProperty({ enum: ['1.0.0', '1.1.0'] })
+  @IsIn(['1.0.0', '1.1.0'])
   schemaVersion!: string;
+  @ApiPropertyOptional({ enum: EvidenceMode })
+  @IsOptional()
+  @IsEnum(EvidenceMode)
+  evidenceMode?: EvidenceMode;
   @ApiProperty({ format: 'uuid' }) @IsUUID() organizationId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() callId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() analysisSessionId!: string;

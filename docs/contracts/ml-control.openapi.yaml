@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SWAR backend-to-ML control API
-  version: 1.0.0
+  version: 2.0.0
   description: Internal loopback/private-network control contract. Fictional identifiers only.
 servers:
   - url: /internal/v1
@@ -14,12 +14,16 @@ paths:
       summary: Start analysis for one backend-authorized participant and track binding.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/AuthTimestamp'
+        - $ref: '#/components/parameters/AuthNonce'
+        - $ref: '#/components/parameters/AuthSignature'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: ./schemas/ml-analysis-control.v1.json
+              $ref: ./schemas/ml-analysis-control.v2.json
       responses:
         '202':
           description: Analysis start accepted.
@@ -36,6 +40,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AnalysisSessionId'
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/AuthTimestamp'
+        - $ref: '#/components/parameters/AuthNonce'
+        - $ref: '#/components/parameters/AuthSignature'
       requestBody:
         required: true
         content:
@@ -55,6 +63,10 @@ paths:
       summary: Infer an embedding from transient consented samples; the ML service must clear samples and output buffers.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/AuthTimestamp'
+        - $ref: '#/components/parameters/AuthNonce'
+        - $ref: '#/components/parameters/AuthSignature'
       requestBody:
         required: true
         content:
@@ -86,6 +98,10 @@ paths:
           required: true
           schema: { type: string, minLength: 8, maxLength: 128 }
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ServiceName'
+        - $ref: '#/components/parameters/AuthTimestamp'
+        - $ref: '#/components/parameters/AuthNonce'
+        - $ref: '#/components/parameters/AuthSignature'
       responses:
         '204': { description: Cancelled or already cleared. }
         default: { $ref: '#/components/responses/Error' }
@@ -94,7 +110,7 @@ components:
     backendService:
       type: http
       scheme: bearer
-      description: Dedicated backend-to-ML secret; never a user JWT.
+      description: Dedicated backend-to-ML secret plus signed timestamp/nonce request headers; never a user JWT.
   parameters:
     AnalysisSessionId:
       name: analysisSessionId
@@ -106,6 +122,26 @@ components:
       in: header
       required: true
       schema: { type: string, minLength: 8, maxLength: 128 }
+    ServiceName:
+      name: X-SWAR-Service
+      in: header
+      required: true
+      schema: { const: swar-backend }
+    AuthTimestamp:
+      name: X-SWAR-Timestamp
+      in: header
+      required: true
+      schema: { type: string, pattern: '^[0-9]+$' }
+    AuthNonce:
+      name: X-SWAR-Nonce
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+    AuthSignature:
+      name: X-SWAR-Signature
+      in: header
+      required: true
+      schema: { type: string, pattern: '^[0-9a-f]{64}$' }
   schemas:
     Accepted:
       type: object

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import {
   EvidenceAcceptanceStatus,
+  type EvidenceMode,
   Prisma,
   ScoreDirection,
   type EvidenceEvent,
@@ -25,6 +26,7 @@ export interface RecordEvidenceInput {
   supersedesEvidenceId?: string;
   idempotencyKey: string;
   schemaVersion: string;
+  evidenceMode: EvidenceMode;
   eventSequence: bigint;
   windowSequence: bigint;
   revision: number;
@@ -70,6 +72,7 @@ function isEquivalent(existing: EvidenceEvent, input: RecordEvidenceInput): bool
     existing.modelVersionId === (input.modelVersionId ?? null) &&
     existing.supersedesEvidenceId === (input.supersedesEvidenceId ?? null) &&
     existing.schemaVersion === input.schemaVersion &&
+    existing.evidenceMode === input.evidenceMode &&
     existing.acceptanceStatus === (input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED) &&
     existing.observedAt.getTime() === input.observedAt.getTime() &&
     existing.processingLatencyMs === (input.processingLatencyMs ?? null) &&
@@ -136,6 +139,7 @@ export class EvidenceRepository {
               : requireUuid(input.supersedesEvidenceId, 'supersedesEvidenceId'),
           idempotencyKey,
           schemaVersion: requireText(input.schemaVersion, 'schemaVersion', 40),
+          evidenceMode: input.evidenceMode,
           eventSequence: input.eventSequence,
           windowSequence: input.windowSequence,
           revision: input.revision,

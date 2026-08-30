@@ -13,3 +13,9 @@ Idempotent mutations require `Idempotency-Key`. Evidence requires the key to equ
 REST consumers use each operation's `x-swar-error-codes` extension as the stable error-code inventory. Adding a recoverable code is backward compatible; removing or changing the meaning of a code requires a major-version review. Provider/database messages are never part of this contract.
 
 Checked-in OpenAPI/AsyncAPI and JSON Schema files are authoritative. Contract tests validate syntax, references, discriminated evidence semantics, enums, and controller-to-snapshot path drift.
+
+Phase P introduces `ml-analysis-control.v2` because exact organization, binding revision, binding
+identifier, and evidence mode are mandatory authorization inputs. The v1 schema remains checked in
+for audit/migration reference but is not accepted by the Phase P serving endpoint. `evidenceMode` is
+an additive optional v1 evidence field; NestJS always persists and enforces the authoritative mode
+from the bound analysis session, and Phase P producers include it.

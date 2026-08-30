@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swar.local/contracts/ml-analysis-control.v2.json",
+  "title": "SWAR ML analysis control v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "organizationId",
+    "analysisSessionId",
+    "callId",
+    "trackBindingId",
+    "bindingRevision",
+    "evidenceMode",
+    "roomName",
+    "participantIdentity",
+    "trackSid",
+    "grantToken",
+    "grantExpiresAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "2.0.0" },
+    "organizationId": { "type": "string", "format": "uuid" },
+    "analysisSessionId": { "type": "string", "format": "uuid" },
+    "callId": { "type": "string", "format": "uuid" },
+    "trackBindingId": { "type": "string", "format": "uuid" },
+    "bindingRevision": { "type": "integer", "minimum": 1 },
+    "evidenceMode": { "enum": ["SIMULATED", "SHADOW", "CALIBRATED"] },
+    "roomName": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "participantIdentity": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "trackSid": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "grantToken": { "type": "string", "minLength": 1, "writeOnly": true },
+    "grantExpiresAt": { "type": "string", "format": "date-time" },
+    "voiceprintReference": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Opaque reference; never an embedding."
+    }
+  }
+}
