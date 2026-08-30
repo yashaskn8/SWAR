@@ -1,6 +1,6 @@
 # SWAR Implementation Phase Status
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 Contract: `AGENTS.md` 1.0.0  
 Status values: `NOT_STARTED`, `IN_PROGRESS`, `COMPLETE`, `BLOCKED`,
 `IMPLEMENTED_NOT_PROMOTED`.
@@ -25,7 +25,7 @@ Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED 
 | N | Real model integration | K, L, M | COMPLETE | Three hash-verified licensed ECAPA/RawNet2/AASIST adapters; versioned score semantics and lifecycle; deterministic non-human CPU compatibility experiment; 89/89 ML tests including real checkpoint smoke plus all Phase N static/documentation/boundary/security checks passed on 2026-08-29. |
 | O | Evaluation/calibration | K, L, N | BLOCKED | Fail-closed evaluation/calibration framework and 18/18 focused tests pass; no approved external governed data root, non-example frozen manifest, data-steward approval, measured score records, or target-hardware profile exists, so no metric/threshold/calibration/promotion is claimed and P remains locked. |
 | P | ML serving/media subscriber | H, J, L, N, O | IMPLEMENTED_NOT_PROMOTED | Authenticated exact-binding NestJS/FastAPI control, restricted LiveKit subscriber, bounded queues/retries/timeouts, idempotent evidence delivery, evidence modes, fail-closed production readiness, graceful cleanup, migration/contracts, and Phase P security/failure tests are implemented. Scientific promotion remains blocked by Phase O. |
-| Q | Risk engine/interventions | F, G, I, J, O, P | IMPLEMENTED_NOT_PROMOTED | Engineering/test/shadow matrix, quality gating, FAST/DEEP recomputation, hysteresis, immutable assessment/audit provenance, tenant API, and fail-closed O/P/Q production guards are implemented. Production transitions/interventions/events remain blocked. |
+| Q | Risk engine/interventions | F, G, I, J, O, P | IMPLEMENTED_NOT_PROMOTED | Engineering/test/shadow matrix, quality gating, deterministic FAST/DEEP recomputation, hysteresis, an atomic tagged evidence-to-assessment/transition/demo-intervention/outbox transaction, authenticated tenant/call-scoped replay/ack, telemetry, and fail-closed O/P/Q production guards are implemented. Production activation remains blocked. |
 | R | Frontend foundation | Q backend-completion PASS; J contracts | NOT_STARTED | - |
 | S | Frontend workflows | J, Q, R | NOT_STARTED | - |
 | T | End-to-end integration | D, P, Q, S | NOT_STARTED | - |
@@ -265,6 +265,12 @@ Phase R: LOCKED
   documentation and no approved external governed data root exists. Scientific execution would
   violate MLR-GOV-001 and the no-bluff policy. The minimal authorized outcome is a tested fail-closed
   framework plus exact blocker evidence; no data, threshold, calibration, or result was fabricated.
+- Governed-input recheck (2026-08-31): PASS for truthful blocker preservation - repository search
+  found only `ml/data/manifests/data-version.example.jsonl`, explicitly labelled `EXAMPLE_ONLY`,
+  and `ml/config/calibration.json` with `BLOCKED_VALIDATION_REQUIRED`. No non-example manifest,
+  governed external root, measured score record, fitted calibration package, operating point,
+  promotion approval, or target-hardware profile was supplied. All three scientific exit criteria
+  remain unchecked.
 - Metric framework: PASS - speaker FAR/FRR/EER, spoof precision/recall/F1/EER, Wilson rate
   intervals, explicit positive-class/score-direction handling, Brier score, expected calibration
   error, deterministic EER handling, and explicit undefined zero-denominator precision are
@@ -382,42 +388,54 @@ Phase R: LOCKED
 - Production suppression: PASS - `SIMULATED`, `SHADOW`, calibrated-looking evidence while blocked,
   insufficient evidence, inactive/untraceable models, missing calibrated scores, and calibration
   mismatch cannot become production eligible. Startup, policy creation, decision activation, the
-  database integrity check, and the existing transition repository each fail closed independently.
-  The engineering decision service creates no `RiskEvent`, `Intervention`, `Alert`, warning, hold,
-  escalation, call action, or WebSocket security publication.
-- Persistence/API: PASS - the new migration adds nullable model `ScoreTarget`, immutable
-  tenant-scoped `RiskAssessment`/`RiskAssessmentEvidence`, uniqueness and composite tenant foreign
-  keys, and a production-eligibility constraint. Assessment creation binds the call/session,
-  call-frozen policy, evidence mode, accepted evidence IDs, model/checkpoint/score provenance,
-  threshold/calibration version, and non-sensitive reason. Concurrent equivalent replay coalesces;
-  conflicting reuse, substituted policy/mode, cross-tenant resources, or cross-call sessions fail.
-  `GET /api/v1/calls/{callId}/risk-assessments` uses existing JWT, permission, tenant, pagination,
-  and call-authorization boundaries.
-- Contracts and tests: PASS - the generated REST snapshot and strict risk-policy schema/fixture pass
-  15/15 contract tests. Focused Phase Q plus platform-gate tests pass 27/27. The complete ordinary
-  backend suite passes 81 active tests with 14 native-only tests skipped; Prettier, ESLint, strict
+  database integrity check, and the existing production transition repository fail closed
+  independently. `SIMULATED` may create only records/events/intervention decisions tagged `DEMO`;
+  its executor can call only the in-memory demo hold adapter outside production. `SHADOW` may create
+  a tagged observation transition/dashboard event but creates no intervention or protected action.
+- Atomic persistence: PASS - the forward migration adds explicit control mode, assessment blocker
+  codes, assessment/transition linkage, intervention retry fields, and stable outbox delivery/ack
+  fields with composite tenant foreign keys. One serializable unit commits the accepted evidence
+  revision, immutable assessment/evidence links/audit, optional tagged transition, optional `DEMO`
+  intervention decisions, and durable security-event outbox, or rolls all of them back. Higher
+  evidence revisions supersede atomically; lower revisions are stale; duplicate/concurrent replay
+  returns the same committed assessment/event identities.
+- API/delivery: PASS - `GET /api/v1/calls/{callId}/risk-assessments` keeps existing JWT, permission,
+  tenant, pagination, and call-authorization boundaries. `/ws/security` authenticates every
+  connection, authorizes every subscribed call, replays only tenant/call-scoped delivered rows from
+  a bounded cursor, deduplicates stable event IDs, and accepts acknowledgement only for the same
+  organization, membership, subscribed call, and dispatched/delivered event. Delivery and demo
+  execution use bounded batch/attempt/backoff state and graceful shutdown flushes.
+- Contracts and tests: PASS - generated REST and AsyncAPI snapshots plus strict risk/security-event
+  schemas pass 16/16 contract tests. The complete ordinary backend suite passes 87 active tests;
+  17 native-only cases are skipped there and exercised by native harnesses. Prettier, ESLint, strict
   TypeScript, Prisma generation/validation, and Nest build pass.
-- Native/upstream regression: PASS - all three migrations apply on fresh native PostgreSQL 18;
-  migration status/no-op replay, seed replay, and 10/10 database tests pass, and the server stops.
-  Native authentication/RBAC/tenant-isolation passes 11/11. Phase P ML serving/readiness regression
-  passes 12/12; Ruff lint/format covers 37 files and `pip check` reports no broken requirements.
-- Documentation/boundaries/security: PASS - documentation headings/links pass for 57 Markdown
-  files; repository and negative container/cross-layer checks pass; `git diff --check` passes; and
-  changed-file secret signatures/sensitive artifact extensions pass for 40 files. No frontend,
-  Docker/Testcontainers artifact, raw audio, embedding, token, private content, checkpoint, or
-  external production integration was added.
+- Native/upstream regression: PASS - all four migrations apply on fresh native PostgreSQL 18;
+  migration status/no-op replay, seed replay, and 13/13 database tests pass, including four matrix
+  scenarios, out-of-order DEEP/FAST, atomic rollback, concurrent replay, durable replay/ack, and
+  cross-tenant rejection. Native authentication/RBAC/tenant isolation passes 11/11. Complete ML
+  regression passes 116 tests with one conditional real-checkpoint smoke skipped; Ruff lint/format,
+  Python byte compilation, `pip check`, and `pip-audit` (with only the local non-PyPI `swar-ml`
+  package unauditable by name) pass.
+- Documentation/boundaries/security: PASS - documentation headings/links pass for 59 Markdown
+  files; positive and negative repository/no-container boundaries pass; `git diff --check`, secret
+  signature scan, sensitive artifact extension scan, and forbidden audio/embedding payload-field
+  scan pass. No frontend, Docker/Testcontainers artifact, raw audio, embedding, token, private
+  content, checkpoint, or external production integration was added. Metrics/logs expose only
+  allowlisted aggregate outcomes, reason categories, queue/latency/retry/readiness state, and IDs.
 - Dependency audit: `VALIDATION REQUIRED` - `npm audit --omit=dev --audit-level=high` still reports
   the inherited three high-severity GHSA-ggr8-5vv4-36mx instances through Prisma 7.10.0's
   `deepmerge-ts@7.1.5`. The offered repair is a breaking forced Prisma 6 downgrade and was not
   applied or misreported as a pass.
-- Acceptance verdict: engineering/test/shadow risk state, API, audit/provenance, fixture intent, and
-  fail-closed gates are `IMPLEMENTED_NOT_PROMOTED`. Production `RiskEvent` transitions,
-  transactional warning/hold/step-up creation, external action activation, and live calibrated
-  WebSocket publication are specifically `BLOCKED_BY_PHASE_O_AND_PHASE_P`.
+- Acceptance verdict: engineering/test/shadow risk state, atomic transition/demo-intervention/outbox
+  loop, API, authenticated durable event replay/ack, audit/provenance, operational telemetry, fixture
+  intent, and fail-closed gates are `IMPLEMENTED_NOT_PROMOTED`. No production record/action is
+  reachable under the committed blocked configuration. Production activation and a real protected-
+  action adapter are specifically `BLOCKED_BY_PHASE_O_AND_PHASE_P` plus Phase Q promotion review.
 - Remaining promotion work: complete governed Phase O evaluation and calibration with approved data
   and measured results; authorize a promoted operating point/calibration artifact; promote Phase P
   serving; review and promote the Phase Q policy; enable the explicit production configuration;
-  then wire and verify production transitions/actions/publication, outage recovery, concurrency,
-  and intervention audit behavior against genuinely eligible evidence.
+  replace the demo-only protected-action adapter with an approved authenticated production adapter;
+  then verify production transitions/actions/publication, outage recovery, concurrency, and
+  intervention audit behavior against genuinely eligible calibrated evidence.
 - Gate verdict: `IMPLEMENTED_NOT_PROMOTED`. Phase O remains scientifically `BLOCKED`; Phase P remains
   not promoted; Phase Q production activation remains disabled; Phase R remains `LOCKED`.

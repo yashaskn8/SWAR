@@ -19,6 +19,7 @@ export interface AllowedAuditMetadata {
   evidenceMode?: string;
   thresholdVersion?: string;
   productionEligible?: boolean;
+  controlMode?: string;
 }
 
 export interface AppendAuditInput {
@@ -129,6 +130,11 @@ export class AuditRepository {
             ...(metadata.productionEligible === undefined
               ? {}
               : { productionEligible: metadata.productionEligible }),
+            ...(metadata.controlMode === undefined
+              ? {}
+              : {
+                  controlMode: requireText(metadata.controlMode, 'auditMetadata.controlMode', 40),
+                }),
           };
     return client.auditLog.create({
       data: {

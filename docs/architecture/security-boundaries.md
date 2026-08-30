@@ -15,6 +15,7 @@ Date: 2026-08-28
 | ML -> NestJS | Evidence/error event | Evidence ingestion adapter | TLS, ML service identity, session/binding/sequence/revision/idempotency validation | Reject/ignore invalid event; audit non-sensitive reason. |
 | NestJS -> PostgreSQL | Backend query/transaction | Tenant data store | DB service credential, parameterized repository interface, organization scope, least privilege, transactions | Fail closed for mutations; active protection cannot be silently cleared. |
 | NestJS -> protected action/verifier | Hold/release/challenge request | Contracted or SIH sample adapter | Service authentication, call/action/challenge binding, expiry, idempotency | Retain hold or require trusted fallback. |
+| NestJS -> WebSocket subscriber | Network client requesting events/replay/ack | Durable tenant security-event outbox | Access JWT, active membership, permission, organization/call authorization, stable event ID and bounded replay | Reject without publishing or acknowledging another tenant/call event. |
 | Operator -> services | Human/operator command | Native service management | OS/service identity, least privilege, audited access, secret separation | Reject unauthorized access; no content logging. |
 
 ## Credential inventory
@@ -54,6 +55,7 @@ Date: 2026-08-28
 | Raw audio persistence | No persistent raw-audio entity or flow; allowed memory locations and clearing rules are explicit. | Storage/log scan and lifecycle test. |
 | Embedding disclosure | Encrypt before durable storage; no plaintext in logs/events; deletion/revocation supported. | Encryption/access/deletion tests. |
 | Threshold probing | Customer event exposes state/reason guidance, not detailed raw scores/thresholds; rate limits apply. | API/UI review and rate-limit test. |
+| Fixture/shadow evidence activates production | Every evidence/assessment/event/action carries a mode and production startup/decision gates validate O/P/Q promotion plus calibration provenance. | Production-mode and headless transaction tests. |
 | Dashboard/client compromise | Backend hold and policy remain authoritative; clients cannot release or rewrite state. | Modified-client/disconnect E2E test. |
 
 ## Privacy statements
@@ -63,4 +65,3 @@ Date: 2026-08-28
 - Full call audio is not persisted by default.
 - Evidence metadata is retained only according to tenant policy and without conversation content.
 - The permitted claim is “privacy- and DPDP-aligned design”; formal compliance remains `VALIDATION REQUIRED` pending legal and deployment review.
-

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../database/prisma.service';
 import { DependencyProbeService } from './dependency-probe.service';
+import { OperationalTelemetryService } from '../../common/logging/operational-telemetry.service';
 
 export type ReadinessStatus = 'ready' | 'not_ready';
 
@@ -20,6 +21,7 @@ export class ReadinessService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly dependencies: DependencyProbeService,
+    private readonly telemetry: OperationalTelemetryService,
   ) {}
 
   async check(): Promise<ReadinessResponse> {
@@ -29,6 +31,12 @@ export class ReadinessService {
       this.dependencies.probeLiveKit(),
     ]);
     const status = database && ml && livekit ? 'ready' : 'not_ready';
+    for (const [dependency, ready] of Object.entries({ database, ml, livekit })) {
+      this.telemetry.gauge('swar_backend_dependency_ready', ready ? 1 : 0, { dependency });
+      if (!ready) {
+        this.telemetry.increment('swar_backend_dependency_not_ready_total', { dependency });
+      }
+    }
     return {
       service: 'swar-backend',
       status,

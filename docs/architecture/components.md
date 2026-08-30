@@ -39,7 +39,7 @@ flowchart TB
     Risk -->|In-process interface; backend policy authority; versioned state transition and required action| Intervene
     Risk -->|In-process repository transaction; service-layer tenant/policy authorization; risk state and policy version| Repo
     Intervene -->|In-process repository transaction; service-layer call/action authorization; idempotent hold, alert, and verification state| Repo
-    Intervene -->|In-process event; authorized call/tenant audience; risk/intervention payload| Query
+    Intervene -->|PostgreSQL-backed outbox; authorized call/tenant audience; versioned tagged event| Query
     Query -->|In-process repository reads; analyst RBAC plus tenant scope; dashboard projection| Repo
     Auth -->|In-process audit interface; authenticated operation context; non-sensitive auth audit record| Audit
     Bind -->|In-process audit interface; verified lifecycle context; non-sensitive binding audit record| Audit
@@ -97,6 +97,7 @@ ML components never access PostgreSQL, authenticate end users, choose a business
 | Call authorization and grant issue | Stateless service over durable call/binding records | PostgreSQL plus verified LiveKit lifecycle events. |
 | Per-call temporal risk | Bounded stateful context with durable accepted evidence/revisions and transitions | Deterministic replay of accepted versioned evidence; no raw audio required. |
 | Holds and step-up | Durable state machine | PostgreSQL transaction/idempotency records. |
+| Security-event delivery/replay/ack | Durable bounded outbox plus stateless authenticated publisher | PostgreSQL stable event IDs, delivery attempts, and tenant/call-scoped acknowledgement. |
 | ML audio buffers/windows | In-memory per analysis session only | Not recoverable by design; restart yields degraded/insufficient evidence and requires a new authorized subscription. |
 | ML model/checkpoint/calibrator | Read-only process state, versioned | Governed artifacts and hashes. |
 | Dashboard projections | Stateless query/read model | PostgreSQL durable events/state. |

@@ -10,7 +10,7 @@
     "eventType": {
       "enum": ["risk.state.changed", "intervention.required", "call.ended", "dashboard.risk-event.created"]
     },
-    "schemaVersion": { "const": "1.0.0" },
+    "schemaVersion": { "enum": ["1.0.0", "1.1.0"] },
     "callId": { "type": "string", "format": "uuid" },
     "targetId": { "type": "string", "format": "uuid" },
     "occurredAt": { "type": "string", "format": "date-time" },
@@ -20,8 +20,23 @@
       "properties": {
         "state": { "enum": ["VERIFIED", "UNVERIFIED", "HIGH_RISK", "CRITICAL"] },
         "reasonCode": { "type": "string", "maxLength": 80 },
-        "policyVersion": { "type": "string", "maxLength": 40 }
+        "policyVersion": { "type": "string", "maxLength": 40 },
+        "mode": { "enum": ["DEMO", "SHADOW", "PRODUCTION"] },
+        "interventionType": {
+          "enum": ["WARN", "HOLD_PROTECTED_ACTION", "REQUIRE_STEP_UP", "REQUIRE_CALLBACK", "END_CALL"]
+        }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "schemaVersion": { "const": "1.1.0" } },
+        "required": ["schemaVersion"]
+      },
+      "then": {
+        "properties": { "metadata": { "required": ["mode"] } }
+      }
+    }
+  ]
 }

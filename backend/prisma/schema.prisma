@@ -203,6 +203,12 @@ enum RiskDecisionMode {
   PRODUCTION_ELIGIBLE
 }
 
+enum SecurityControlMode {
+  DEMO
+  SHADOW
+  PRODUCTION
+}
+
 enum InterventionType {
   WARN
   HOLD_PROTECTED_ACTION
@@ -318,6 +324,7 @@ model OrganizationMembership {
   resolvedInterventions Intervention[]          @relation("InterventionResolvedBy")
   verificationAttempts  VerificationChallenge[] @relation("VerificationPerformedBy")
   auditLogs             AuditLog[]              @relation("AuditActor")
+  acknowledgedAlerts    Alert[]                 @relation("AlertAcknowledgedBy")
 
   @@unique([organizationId, id])
   @@unique([organizationId, userId])
@@ -733,37 +740,39 @@ model EvidenceEvent {
 }
 
 model RiskAssessment {
-  id                    String                @id @default(uuid(7)) @db.Uuid
-  organizationId        String                @db.Uuid
-  callId                String                @db.Uuid
-  analysisSessionId     String                @db.Uuid
-  riskPolicyId          String                @db.Uuid
-  idempotencyKey        String                @db.VarChar(128)
-  schemaVersion         String                @db.VarChar(40)
-  evidenceSetHashSha256 String                @db.Char(64)
-  evidenceMode          EvidenceMode
-  decisionMode          RiskDecisionMode
-  outcome               RiskAssessmentOutcome
-  priorState            RiskState
-  effectiveState        RiskState
-  transitioned          Boolean               @default(false)
-  productionEligible    Boolean               @default(false)
-  activationSuppressed  Boolean               @default(true)
-  reasonCode            String                @db.VarChar(80)
-  policyKey             String                @db.VarChar(80)
-  policyVersion         String                @db.VarChar(40)
-  thresholdVersion      String                @db.VarChar(80)
-  calibrationVersion    String?               @db.VarChar(80)
-  proposedInterventions InterventionType[]    @default([])
-  maxWindowSequence     BigInt
-  occurredAt            DateTime              @db.Timestamptz(6)
-  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
+  id                     String                @id @default(uuid(7)) @db.Uuid
+  organizationId         String                @db.Uuid
+  callId                 String                @db.Uuid
+  analysisSessionId      String                @db.Uuid
+  riskPolicyId           String                @db.Uuid
+  idempotencyKey         String                @db.VarChar(128)
+  schemaVersion          String                @db.VarChar(40)
+  evidenceSetHashSha256  String                @db.Char(64)
+  evidenceMode           EvidenceMode
+  decisionMode           RiskDecisionMode
+  outcome                RiskAssessmentOutcome
+  priorState             RiskState
+  effectiveState         RiskState
+  transitioned           Boolean               @default(false)
+  productionEligible     Boolean               @default(false)
+  activationSuppressed   Boolean               @default(true)
+  activationBlockerCodes String[]              @default([])
+  reasonCode             String                @db.VarChar(80)
+  policyKey              String                @db.VarChar(80)
+  policyVersion          String                @db.VarChar(40)
+  thresholdVersion       String                @db.VarChar(80)
+  calibrationVersion     String?               @db.VarChar(80)
+  proposedInterventions  InterventionType[]    @default([])
+  maxWindowSequence      BigInt
+  occurredAt             DateTime              @db.Timestamptz(6)
+  createdAt              DateTime              @default(now()) @db.Timestamptz(6)
 
   organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   call            Call                     @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
   analysisSession AnalysisSession          @relation(fields: [organizationId, analysisSessionId], references: [organizationId, id], onDelete: Restrict)
   riskPolicy      RiskPolicy               @relation(fields: [organizationId, riskPolicyId], references: [organizationId, id], onDelete: Restrict)
   evidenceLinks   RiskAssessmentEvidence[]
+  riskEvent       RiskEvent?
 
   @@unique([organizationId, id])
   @@unique([organizationId, idempotencyKey])
@@ -789,28 +798,31 @@ model RiskAssessmentEvidence {
 }
 
 model RiskEvent {
-  id                   String    @id @default(uuid(7)) @db.Uuid
-  organizationId       String    @db.Uuid
-  callId               String    @db.Uuid
-  analysisSessionId    String?   @db.Uuid
-  riskPolicyId         String    @db.Uuid
-  idempotencyKey       String    @db.VarChar(128)
-  schemaVersion        String    @db.VarChar(40)
+  id                   String              @id @default(uuid(7)) @db.Uuid
+  organizationId       String              @db.Uuid
+  callId               String              @db.Uuid
+  analysisSessionId    String?             @db.Uuid
+  riskPolicyId         String              @db.Uuid
+  riskAssessmentId     String?             @db.Uuid
+  idempotencyKey       String              @db.VarChar(128)
+  schemaVersion        String              @db.VarChar(40)
   eventSequence        BigInt
+  mode                 SecurityControlMode @default(SHADOW)
   priorState           RiskState
   state                RiskState
-  transitionReasonCode String    @db.VarChar(80)
-  policyKey            String    @db.VarChar(80)
-  policyVersion        String    @db.VarChar(40)
-  thresholdVersion     String    @db.VarChar(80)
-  occurredAt           DateTime  @db.Timestamptz(6)
-  receivedAt           DateTime  @default(now()) @db.Timestamptz(6)
-  createdAt            DateTime  @default(now()) @db.Timestamptz(6)
+  transitionReasonCode String              @db.VarChar(80)
+  policyKey            String              @db.VarChar(80)
+  policyVersion        String              @db.VarChar(40)
+  thresholdVersion     String              @db.VarChar(80)
+  occurredAt           DateTime            @db.Timestamptz(6)
+  receivedAt           DateTime            @default(now()) @db.Timestamptz(6)
+  createdAt            DateTime            @default(now()) @db.Timestamptz(6)
 
   organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   call            Call                @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
   analysisSession AnalysisSession?    @relation(fields: [organizationId, analysisSessionId], references: [organizationId, id], onDelete: Restrict)
   riskPolicy      RiskPolicy          @relation(fields: [organizationId, riskPolicyId], references: [organizationId, id], onDelete: Restrict)
+  riskAssessment  RiskAssessment?     @relation(fields: [organizationId, riskAssessmentId], references: [organizationId, id], onDelete: Restrict)
   evidenceLinks   RiskEventEvidence[]
   interventions   Intervention[]
   alerts          Alert[]
@@ -818,6 +830,7 @@ model RiskEvent {
   @@unique([organizationId, id])
   @@unique([organizationId, callId, id])
   @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, riskAssessmentId])
   @@unique([organizationId, callId, eventSequence])
   @@index([organizationId, callId, occurredAt])
   @@index([organizationId, state, occurredAt])
@@ -840,23 +853,27 @@ model RiskEventEvidence {
 }
 
 model Intervention {
-  id                       String             @id @default(uuid(7)) @db.Uuid
-  organizationId           String             @db.Uuid
-  callId                   String             @db.Uuid
-  riskEventId              String             @db.Uuid
-  resolvedByMembershipId   String?            @db.Uuid
-  idempotencyKey           String             @db.VarChar(128)
+  id                       String              @id @default(uuid(7)) @db.Uuid
+  organizationId           String              @db.Uuid
+  callId                   String              @db.Uuid
+  riskEventId              String              @db.Uuid
+  resolvedByMembershipId   String?             @db.Uuid
+  idempotencyKey           String              @db.VarChar(128)
   type                     InterventionType
-  status                   InterventionStatus @default(REQUIRED)
-  policyVersion            String             @db.VarChar(40)
-  reasonCode               String             @db.VarChar(80)
-  protectedActionReference String?            @db.VarChar(160)
-  requiredAt               DateTime           @db.Timestamptz(6)
-  acknowledgedAt           DateTime?          @db.Timestamptz(6)
-  resolvedAt               DateTime?          @db.Timestamptz(6)
-  expiresAt                DateTime?          @db.Timestamptz(6)
-  createdAt                DateTime           @default(now()) @db.Timestamptz(6)
-  updatedAt                DateTime           @updatedAt @db.Timestamptz(6)
+  status                   InterventionStatus  @default(REQUIRED)
+  mode                     SecurityControlMode @default(SHADOW)
+  policyVersion            String              @db.VarChar(40)
+  reasonCode               String              @db.VarChar(80)
+  protectedActionReference String?             @db.VarChar(160)
+  requiredAt               DateTime            @db.Timestamptz(6)
+  acknowledgedAt           DateTime?           @db.Timestamptz(6)
+  resolvedAt               DateTime?           @db.Timestamptz(6)
+  expiresAt                DateTime?           @db.Timestamptz(6)
+  executionAttemptCount    Int                 @default(0)
+  nextAttemptAt            DateTime?           @db.Timestamptz(6)
+  failureCode              String?             @db.VarChar(80)
+  createdAt                DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime            @updatedAt @db.Timestamptz(6)
 
   organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   call                 Call                    @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
@@ -870,6 +887,7 @@ model Intervention {
   @@unique([organizationId, idempotencyKey])
   @@index([organizationId, callId, status])
   @@index([organizationId, status, requiredAt])
+  @@index([organizationId, status, nextAttemptAt])
 }
 
 model VerificationChallenge {
@@ -901,33 +919,40 @@ model VerificationChallenge {
 }
 
 model Alert {
-  id                 String       @id @default(uuid(7)) @db.Uuid
-  organizationId     String       @db.Uuid
-  callId             String       @db.Uuid
-  riskEventId        String       @db.Uuid
-  interventionId     String?      @db.Uuid
-  idempotencyKey     String       @db.VarChar(128)
-  channel            AlertChannel
-  status             AlertStatus  @default(PENDING)
-  eventType          String       @db.VarChar(120)
-  schemaVersion      String       @db.VarChar(40)
-  recipientReference String?      @db.VarChar(160)
-  attemptCount       Int          @default(0)
-  nextAttemptAt      DateTime?    @db.Timestamptz(6)
-  deliveredAt        DateTime?    @db.Timestamptz(6)
-  failureCode        String?      @db.VarChar(80)
-  createdAt          DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime     @updatedAt @db.Timestamptz(6)
+  id                         String              @id @default(uuid(7)) @db.Uuid
+  organizationId             String              @db.Uuid
+  callId                     String              @db.Uuid
+  riskEventId                String              @db.Uuid
+  interventionId             String?             @db.Uuid
+  acknowledgedByMembershipId String?             @db.Uuid
+  idempotencyKey             String              @db.VarChar(128)
+  externalEventId            String?             @db.VarChar(68)
+  channel                    AlertChannel
+  status                     AlertStatus         @default(PENDING)
+  mode                       SecurityControlMode @default(SHADOW)
+  eventType                  String              @db.VarChar(120)
+  schemaVersion              String              @db.VarChar(40)
+  recipientReference         String?             @db.VarChar(160)
+  attemptCount               Int                 @default(0)
+  nextAttemptAt              DateTime?           @db.Timestamptz(6)
+  deliveredAt                DateTime?           @db.Timestamptz(6)
+  acknowledgedAt             DateTime?           @db.Timestamptz(6)
+  failureCode                String?             @db.VarChar(80)
+  createdAt                  DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt                  DateTime            @updatedAt @db.Timestamptz(6)
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  call         Call          @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
-  riskEvent    RiskEvent     @relation(fields: [organizationId, callId, riskEventId], references: [organizationId, callId, id], onDelete: Restrict)
-  intervention Intervention? @relation(fields: [organizationId, interventionId], references: [organizationId, id], onDelete: Restrict)
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call           Call                    @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  riskEvent      RiskEvent               @relation(fields: [organizationId, callId, riskEventId], references: [organizationId, callId, id], onDelete: Restrict)
+  intervention   Intervention?           @relation(fields: [organizationId, interventionId], references: [organizationId, id], onDelete: Restrict)
+  acknowledgedBy OrganizationMembership? @relation("AlertAcknowledgedBy", fields: [organizationId, acknowledgedByMembershipId], references: [organizationId, id], onDelete: Restrict)
 
   @@unique([organizationId, id])
   @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, externalEventId])
   @@index([organizationId, status, nextAttemptAt])
   @@index([organizationId, callId, createdAt])
+  @@index([organizationId, callId, externalEventId])
 }
 
 model AuditLog {

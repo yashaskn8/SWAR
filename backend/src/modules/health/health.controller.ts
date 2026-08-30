@@ -1,7 +1,8 @@
-import { Controller, Get, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Header, HttpCode, HttpStatus, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { ReadinessService, type ReadinessResponse } from './readiness.service';
+import { OperationalTelemetryService } from '../../common/logging/operational-telemetry.service';
 
 export interface HealthResponse {
   readonly service: 'swar-backend';
@@ -10,7 +11,10 @@ export interface HealthResponse {
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly readiness: ReadinessService) {}
+  constructor(
+    private readonly readiness: ReadinessService,
+    private readonly telemetry: OperationalTelemetryService,
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -23,5 +27,12 @@ export class HealthController {
     const result = await this.readiness.check();
     response.status(result.status === 'ready' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE);
     return result;
+  }
+
+  @Get('metrics')
+  @Header('content-type', 'text/plain; version=0.0.4; charset=utf-8')
+  @HttpCode(HttpStatus.OK)
+  getMetrics(): string {
+    return this.telemetry.renderPrometheus();
   }
 }

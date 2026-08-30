@@ -72,6 +72,10 @@ export interface ApplicationConfiguration {
     securityEventReplayMaximum: number;
     securitySubscriptionMaximumCalls: number;
     securityInboundRateLimitMaximum: number;
+    securityOutboxBatchSize: number;
+    securityOutboxMaximumAttempts: number;
+    securityOutboxRetryBaseMs: number;
+    securityOutboxPollIntervalMs: number;
     enrollmentMaximumSamples: number;
     enrollmentMaximumSampleBytes: number;
     enrollmentMaximumTotalBytes: number;
@@ -332,6 +336,10 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
         1,
         10_000,
       ),
+      securityOutboxBatchSize: reader.integer('SECURITY_OUTBOX_BATCH_SIZE', 1, 1_000),
+      securityOutboxMaximumAttempts: reader.integer('SECURITY_OUTBOX_MAX_ATTEMPTS', 1, 20),
+      securityOutboxRetryBaseMs: reader.integer('SECURITY_OUTBOX_RETRY_BASE_MS', 10, 60_000),
+      securityOutboxPollIntervalMs: reader.integer('SECURITY_OUTBOX_POLL_INTERVAL_MS', 100, 60_000),
       enrollmentMaximumSamples: reader.integer('ENROLLMENT_MAX_SAMPLES', 1, 20),
       enrollmentMaximumSampleBytes: reader.integer(
         'ENROLLMENT_MAX_SAMPLE_BYTES',
@@ -357,6 +365,12 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
     configuration.dependencies.mlEvidenceMode !== 'CALIBRATED'
   ) {
     reader.invalid.push('ML_EVIDENCE_MODE');
+  }
+  if (
+    configuration.runtime.environment === 'production' &&
+    configuration.risk.interventionMode !== 'PRODUCTION'
+  ) {
+    reader.invalid.push('RISK_INTERVENTION_MODE');
   }
   if (
     configuration.risk.interventionMode === 'PRODUCTION' &&

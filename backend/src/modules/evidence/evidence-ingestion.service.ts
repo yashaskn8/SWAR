@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Optional } from '@nestjs/common';
 
 import {
   AnalysisSessionStatus,
@@ -12,6 +12,9 @@ import {
 import { ApiError } from '../../common/errors/api-error';
 import { CallRepository } from '../calls/call.repository';
 import { RiskDecisionService } from '../risk/risk-decision.service';
+import { HeadlessRiskPipelineService } from '../risk/headless-risk-pipeline.service';
+import { SecurityEventOutboxService } from '../security-events/security-event-outbox.service';
+import { EngineeringInterventionExecutorService } from '../interventions/engineering-intervention-executor.service';
 import { MlEvidenceDto, MlEvidenceEventType } from './evidence.contracts';
 import { EvidenceRepository } from './evidence.repository';
 
@@ -101,6 +104,9 @@ export class EvidenceIngestionService {
     private readonly calls: CallRepository,
     private readonly evidence: EvidenceRepository,
     private readonly riskDecision: RiskDecisionService,
+    @Optional() private readonly headlessPipeline?: HeadlessRiskPipelineService,
+    @Optional() private readonly securityOutbox?: SecurityEventOutboxService,
+    @Optional() private readonly engineeringInterventions?: EngineeringInterventionExecutorService,
   ) {}
 
   async ingest(input: MlEvidenceDto) {
@@ -132,7 +138,7 @@ export class EvidenceIngestionService {
         : input.eventType === MlEvidenceEventType.PIPELINE_ERROR
           ? EvidenceReadiness.ERROR
           : EvidenceReadiness.READY;
-    const event = await this.evidence.record(context, {
+    const recordInput = {
       callId: input.callId,
       analysisSessionId: input.analysisSessionId,
       trackBindingId: input.trackBindingId,
@@ -168,7 +174,28 @@ export class EvidenceIngestionService {
         ? {}
         : { calibrationVersion: input.calibrationVersion }),
       ...(input.errorCode === undefined ? {} : { errorCode: input.errorCode }),
-    });
+    };
+    if (
+      acceptanceStatus === EvidenceAcceptanceStatus.ACCEPTED &&
+      this.headlessPipeline !== undefined &&
+      typeof this.evidence.recordWithClient === 'function'
+    ) {
+      const processed = await this.headlessPipeline.ingestAcceptedEvidence({
+        organizationId: input.organizationId,
+        evidence: recordInput,
+      });
+      await Promise.allSettled([
+        this.securityOutbox?.flush() ?? Promise.resolve(0),
+        this.engineeringInterventions?.executePending() ?? Promise.resolve(0),
+      ]);
+      return {
+        evidenceEventId: processed.evidenceEventId,
+        eventId: input.eventId,
+        acceptanceStatus: processed.acceptanceStatus,
+        riskAssessment: processed.riskAssessment,
+      };
+    }
+    const event = await this.evidence.record(context, recordInput);
     const riskAssessment =
       event.acceptanceStatus === EvidenceAcceptanceStatus.ACCEPTED
         ? await this.riskDecision.assessAcceptedEvidence({

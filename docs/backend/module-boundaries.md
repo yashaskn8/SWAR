@@ -20,12 +20,19 @@ The deterministic platform test constructs the relative TypeScript import graph 
 
 ## Platform contracts
 
-- Public routes use `/api/v1`; operational health remains `/health` and `/health/ready`.
+- Public routes use `/api/v1`; operational health remains `/health`, `/health/ready`, and
+  `/health/metrics`. Metrics are aggregate and privacy-safe and must be network-restricted by the
+  operator/proxy rather than exposed as a customer API.
 - Every error response is `{ code, message, requestId, details? }`. Details contain validated field names only and never stack traces or dependency messages.
 - A syntactically valid incoming `x-request-id` may be propagated; otherwise the backend generates a UUID and returns it as `x-request-id`.
 - Logs are newline-delimited JSON with allowlisted metadata. Authorization, cookies, tokens, passwords, secrets, embeddings, waveform/PCM/audio data, voiceprint material, ciphertext, database credentials, stack traces, and request bodies are excluded or redacted.
 - Liveness never probes dependencies. Readiness probes PostgreSQL, the configured ML health endpoint, and LiveKit reachability using bounded timeouts.
 - The Phase H idempotency service is a bounded single-process request replay/coalescing layer for explicitly selected non-sensitive responses. Durable domain mutations still require their PostgreSQL idempotency keys and transactions; the memory layer is never their source of truth.
+- The engineering headless risk pipeline owns the serializable evidence/assessment/transition/
+  intervention-decision/outbox transaction. The security-event outbox is PostgreSQL-backed;
+  WebSocket delivery, replay, acknowledgement, and retries never become the risk source of truth.
+- FastAPI owns transient media/model processing only. It has no application PostgreSQL access,
+  cannot choose an intervention, and cannot promote evidence or bypass NestJS tenant policy.
 - CORS uses an explicit origin allowlist. Wildcard-with-credentials is prohibited, and production origins/transports require TLS schemes.
 
 ## Stable platform error codes
@@ -49,4 +56,6 @@ The deterministic platform test constructs the relative TypeScript import graph 
 - Production CORS origins and TLS termination addresses require deployment approval.
 - Readiness polling intervals and platform timeout values require measurement on the deployment network; environment values are engineering configuration, not performance claims.
 - Multi-node HTTP replay caching would require a separately approved shared store or database design. The SIH single-node layer does not claim cross-process replay.
+- Production risk transitions and intervention adapters remain blocked until the Phase O scientific,
+  Phase P serving-promotion, and Phase Q production-policy gates are independently satisfied.
 - The Phase I workflow and provider boundaries, recovery states, privacy invariants, and demo-adapter restriction are specified in [Backend domain workflows](domain-workflows.md).

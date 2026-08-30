@@ -114,7 +114,7 @@ Immutable FAST, DEEP, identity, quality, insufficient-evidence, or pipeline-erro
 
 ### RiskAssessment
 
-Immutable engineering, shadow, calibrated-blocked, or production-eligible evaluation of a deterministic accepted evidence set. It records the four matrix outcomes or internal `INSUFFICIENT_EVIDENCE`, effective temporal state, evidence/policy/calibration trace, proposed interventions, and the explicit production-eligibility/suppression result. A suppressed assessment is not a production risk transition and cannot create an intervention or security event.
+Immutable engineering, shadow, calibrated-blocked, or production-eligible evaluation of a deterministic accepted evidence set. It records the four matrix outcomes or internal `INSUFFICIENT_EVIDENCE`, effective temporal state, evidence/policy/calibration trace, proposed interventions, explicit production-eligibility/suppression result, and stable activation-blocker codes. A suppressed assessment cannot create a production transition, intervention, or security event. Engineering `DEMO` transitions/outbox records are permitted only with their non-production mode tag; `SHADOW` creates no action.
 
 ### RiskAssessmentEvidence
 
@@ -122,7 +122,7 @@ Tenant-scoped join proving the exact evidence set used by an immutable assessmen
 
 ### RiskEvent
 
-Immutable transition created only by the backend risk engine. It links the accepted evidence through `RiskEventEvidence`, stores prior/current approved states, and snapshots policy/threshold/schema versions. It never treats insufficient audio as `CRITICAL` by itself.
+Immutable transition created only by the backend risk engine. It links its source assessment and accepted evidence through tenant-scoped relations, stores prior/current approved states, snapshots policy/threshold/schema versions, and records `DEMO`, `SHADOW`, or `PRODUCTION` control mode. It never treats insufficient audio as `CRITICAL` by itself. Production mode requires the independent O/P/Q promotion gates.
 
 ### RiskEventEvidence
 
@@ -130,7 +130,7 @@ Tenant-scoped join proving exactly which immutable evidence informed a risk even
 
 ### Intervention
 
-Server-side action created idempotently from a risk event. A hold is released only by an authorized independent verification/policy transition, never by caller voice alone or client disconnect.
+Server-side action created idempotently from a risk event. It records control mode plus bounded execution attempt, next-attempt, and failure state. Engineering execution is limited to the explicit `DEMO` adapter; `SHADOW` creates no action. A production hold is released only by an authorized independent verification/policy transition, never by caller voice alone or client disconnect.
 
 ### VerificationChallenge
 
@@ -138,7 +138,7 @@ An attempt for step-up or official callback verification tied to one interventio
 
 ### Alert
 
-Bounded-delivery state for versioned WebSocket/security-event publication. Failure remains visible and does not change the underlying risk/intervention state.
+Durable, idempotent delivery/outbox state for versioned WebSocket security-event publication. It carries a stable external event ID, control mode, bounded retry state, delivery timestamp, and tenant-authorized acknowledgement membership/timestamp. Failure remains visible and does not change the underlying risk/intervention state.
 
 ### AuditLog
 
@@ -165,6 +165,10 @@ Only membership-role and risk-event-evidence join rows use narrowly scoped casca
 - Voiceprint revoked during a call: consent/voiceprint revoke atomically, the identity path stops, analysis degrades or revokes, buffers clear, and prior evidence remains versioned for audit. No unknown caller becomes verified.
 - Participant reconnect/new track SID: create a new `MediaTrack` and `TrackBinding.revision`; supersede the prior binding and reject later evidence against it.
 - FAST/DEEP out of order or retried: tenant idempotency keys deduplicate transport retries; window/type/revision uniqueness orders semantics; a late accepted revision can create a new risk event but never edits an old one.
+- A higher evidence revision atomically supersedes the previously accepted revision. A lower revision
+  is stale, and a duplicate idempotency key replays the same committed assessment/outbox identity.
+- Client reconnect/replay reads delivered outbox rows only within the authenticated organization and
+  authorized call set. Acknowledgement is scoped by organization, membership, call, and event ID.
 - Version changes: a call keeps its policy snapshot; each evidence and risk event keeps model/checkpoint/calibration/policy/threshold/schema snapshots. Activation affects later events/calls only under the owning contract.
 
 ## Requirements trace

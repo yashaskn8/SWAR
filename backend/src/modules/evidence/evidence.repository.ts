@@ -15,6 +15,7 @@ import {
   requireText,
   requireUuid,
   type TenantContext,
+  type TransactionClient,
 } from '../../database/database.types';
 import { PrismaService } from '../../database/prisma.service';
 
@@ -70,7 +71,8 @@ function isEquivalent(existing: EvidenceEvent, input: RecordEvidenceInput): bool
     existing.windowStartMs === input.windowStartMs &&
     existing.windowEndMs === input.windowEndMs &&
     existing.modelVersionId === (input.modelVersionId ?? null) &&
-    existing.supersedesEvidenceId === (input.supersedesEvidenceId ?? null) &&
+    (input.supersedesEvidenceId === undefined ||
+      existing.supersedesEvidenceId === input.supersedesEvidenceId) &&
     existing.schemaVersion === input.schemaVersion &&
     existing.evidenceMode === input.evidenceMode &&
     existing.acceptanceStatus === (input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED) &&
@@ -96,6 +98,31 @@ export class EvidenceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async record(context: TenantContext, input: RecordEvidenceInput): Promise<EvidenceEvent> {
+    try {
+      return await this.recordWithClient(this.prisma.client, context, input);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const organizationId = requireTenant(context);
+        const replay = await this.prisma.client.evidenceEvent.findUnique({
+          where: {
+            organizationId_idempotencyKey: {
+              organizationId,
+              idempotencyKey: requireText(input.idempotencyKey, 'idempotencyKey', 128),
+            },
+          },
+        });
+        if (replay !== null && isEquivalent(replay, input)) return replay;
+        throw new IdempotencyConflictError();
+      }
+      throw error;
+    }
+  }
+
+  async recordWithClient(
+    client: TransactionClient,
+    context: TenantContext,
+    input: RecordEvidenceInput,
+  ): Promise<EvidenceEvent> {
     const organizationId = requireTenant(context);
     requireUuid(input.callId, 'callId');
     requireUuid(input.analysisSessionId, 'analysisSessionId');
@@ -110,7 +137,7 @@ export class EvidenceRepository {
       throw new IdempotencyConflictError();
     }
     const idempotencyKey = requireText(input.idempotencyKey, 'idempotencyKey', 128);
-    const existing = await this.prisma.client.evidenceEvent.findUnique({
+    const existing = await client.evidenceEvent.findUnique({
       where: {
         organizationId_idempotencyKey: { organizationId, idempotencyKey },
       },
@@ -122,61 +149,73 @@ export class EvidenceRepository {
       return existing;
     }
 
-    try {
-      return await this.prisma.client.evidenceEvent.create({
-        data: {
+    let acceptanceStatus = input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED;
+    let supersedesEvidenceId = input.supersedesEvidenceId ?? null;
+    if (acceptanceStatus === EvidenceAcceptanceStatus.ACCEPTED) {
+      const latest = await client.evidenceEvent.findFirst({
+        where: {
           organizationId,
-          callId: input.callId,
           analysisSessionId: input.analysisSessionId,
-          trackBindingId: input.trackBindingId,
-          modelVersionId:
-            input.modelVersionId === undefined
-              ? null
-              : requireUuid(input.modelVersionId, 'modelVersionId'),
-          supersedesEvidenceId:
-            input.supersedesEvidenceId === undefined
-              ? null
-              : requireUuid(input.supersedesEvidenceId, 'supersedesEvidenceId'),
-          idempotencyKey,
-          schemaVersion: requireText(input.schemaVersion, 'schemaVersion', 40),
-          evidenceMode: input.evidenceMode,
-          eventSequence: input.eventSequence,
           windowSequence: input.windowSequence,
-          revision: input.revision,
           evidenceType: input.evidenceType,
-          readiness: input.readiness,
-          acceptanceStatus: input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED,
-          windowStartMs: input.windowStartMs,
-          windowEndMs: input.windowEndMs,
-          observedAt: input.observedAt,
-          processingLatencyMs: input.processingLatencyMs ?? null,
-          speechDurationMs: input.speechDurationMs ?? null,
-          qualityScore: input.qualityScore ?? null,
-          reasonCodes: input.reasonCodes ?? [],
-          modelName: input.modelName ?? null,
-          modelVersion: input.modelVersion ?? null,
-          checkpointHashSha256: input.checkpointHashSha256 ?? null,
-          scoreName: input.scoreName ?? null,
-          scoreDirection: input.scoreDirection ?? ScoreDirection.NOT_APPLICABLE,
-          rawScore: input.rawScore ?? null,
-          calibratedScore: input.calibratedScore ?? null,
-          calibrationVersion: input.calibrationVersion ?? null,
-          errorCode: input.errorCode ?? null,
+          acceptanceStatus: EvidenceAcceptanceStatus.ACCEPTED,
         },
+        orderBy: [{ revision: 'desc' }, { eventSequence: 'desc' }],
       });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        const replay = await this.prisma.client.evidenceEvent.findUnique({
-          where: {
-            organizationId_idempotencyKey: { organizationId, idempotencyKey },
-          },
-        });
-        if (replay !== null && isEquivalent(replay, input)) {
-          return replay;
+      if (latest !== null && input.revision < latest.revision) {
+        acceptanceStatus = EvidenceAcceptanceStatus.STALE;
+      } else if (latest !== null && input.revision > latest.revision) {
+        if (supersedesEvidenceId !== null && supersedesEvidenceId !== latest.id) {
+          throw new IdempotencyConflictError();
         }
-        throw new IdempotencyConflictError();
+        supersedesEvidenceId = latest.id;
+        await client.evidenceEvent.update({
+          where: { id: latest.id },
+          data: { acceptanceStatus: EvidenceAcceptanceStatus.SUPERSEDED },
+        });
       }
-      throw error;
     }
+
+    return client.evidenceEvent.create({
+      data: {
+        organizationId,
+        callId: input.callId,
+        analysisSessionId: input.analysisSessionId,
+        trackBindingId: input.trackBindingId,
+        modelVersionId:
+          input.modelVersionId === undefined
+            ? null
+            : requireUuid(input.modelVersionId, 'modelVersionId'),
+        supersedesEvidenceId:
+          supersedesEvidenceId === null
+            ? null
+            : requireUuid(supersedesEvidenceId, 'supersedesEvidenceId'),
+        idempotencyKey,
+        schemaVersion: requireText(input.schemaVersion, 'schemaVersion', 40),
+        evidenceMode: input.evidenceMode,
+        eventSequence: input.eventSequence,
+        windowSequence: input.windowSequence,
+        revision: input.revision,
+        evidenceType: input.evidenceType,
+        readiness: input.readiness,
+        acceptanceStatus,
+        windowStartMs: input.windowStartMs,
+        windowEndMs: input.windowEndMs,
+        observedAt: input.observedAt,
+        processingLatencyMs: input.processingLatencyMs ?? null,
+        speechDurationMs: input.speechDurationMs ?? null,
+        qualityScore: input.qualityScore ?? null,
+        reasonCodes: input.reasonCodes ?? [],
+        modelName: input.modelName ?? null,
+        modelVersion: input.modelVersion ?? null,
+        checkpointHashSha256: input.checkpointHashSha256 ?? null,
+        scoreName: input.scoreName ?? null,
+        scoreDirection: input.scoreDirection ?? ScoreDirection.NOT_APPLICABLE,
+        rawScore: input.rawScore ?? null,
+        calibratedScore: input.calibratedScore ?? null,
+        calibrationVersion: input.calibrationVersion ?? null,
+        errorCode: input.errorCode ?? null,
+      },
+    });
   }
 }

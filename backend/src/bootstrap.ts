@@ -24,6 +24,7 @@ export function configureApplication(app: INestApplication): void {
     exclude: [
       { path: 'health', method: RequestMethod.ALL },
       { path: 'health/ready', method: RequestMethod.ALL },
+      { path: 'health/metrics', method: RequestMethod.ALL },
     ],
   });
   app.enableCors({

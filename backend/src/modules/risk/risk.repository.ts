@@ -9,6 +9,7 @@ import {
   InterventionStatus,
   ModelLifecycleStatus,
   Prisma,
+  SecurityControlMode,
   VerificationStatus,
   type Alert,
   type AlertChannel,
@@ -414,6 +415,7 @@ export class RiskRepository {
             idempotencyKey,
             schemaVersion: requireText(input.schemaVersion, 'schemaVersion', 40),
             eventSequence: input.eventSequence,
+            mode: SecurityControlMode.PRODUCTION,
             priorState: input.priorState,
             state: input.state,
             transitionReasonCode: requireText(
@@ -450,6 +452,7 @@ export class RiskRepository {
                 ),
                 type: interventionInput.type,
                 status: InterventionStatus.REQUIRED,
+                mode: SecurityControlMode.PRODUCTION,
                 policyVersion: requireText(
                   interventionInput.policyVersion,
                   'intervention.policyVersion',
@@ -491,6 +494,7 @@ export class RiskRepository {
               idempotencyKey: requireText(alertInput.idempotencyKey, 'alert.idempotencyKey', 128),
               channel: alertInput.channel,
               status: AlertStatus.PENDING,
+              mode: SecurityControlMode.PRODUCTION,
               eventType: requireText(alertInput.eventType, 'alert.eventType', 120),
               schemaVersion: requireText(alertInput.schemaVersion, 'alert.schemaVersion', 40),
               recipientReference:

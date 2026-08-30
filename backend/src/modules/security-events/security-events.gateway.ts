@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 
+import { Optional } from '@nestjs/common';
+
 import {
   ConnectedSocket,
   MessageBody,
@@ -12,10 +14,13 @@ import type { IncomingMessage } from 'node:http';
 import type WebSocket from 'ws';
 
 import { ConfigurationService } from '../../config/configuration';
+import { SafeLogger } from '../../common/logging/safe-logger.service';
+import { OperationalTelemetryService } from '../../common/logging/operational-telemetry.service';
 import type { AuthPrincipal } from '../auth/refresh-session.repository';
 import { AccessSessionAuthenticator } from '../auth/access-session-authenticator.service';
 import { CallQueriesService } from '../calls/call-queries.service';
 import { SecurityEventPort, type SecurityEvent } from './security-event.port';
+import { SecurityEventOutboxRepository } from './security-event-outbox.repository';
 
 interface ClientState {
   principal: AuthPrincipal;
@@ -69,6 +74,9 @@ export class SecurityEventsGateway
     private readonly authenticator: AccessSessionAuthenticator,
     private readonly calls: CallQueriesService,
     private readonly configuration: ConfigurationService,
+    @Optional() private readonly outbox?: SecurityEventOutboxRepository,
+    @Optional() private readonly logger?: SafeLogger,
+    @Optional() private readonly telemetry?: OperationalTelemetryService,
   ) {
     super();
   }
@@ -125,6 +133,35 @@ export class SecurityEventsGateway
       return this.error('SUBSCRIPTION_FORBIDDEN');
     }
     state.callIds = new Set(callIds);
+    if (this.outbox !== undefined) {
+      const replay = await this.outbox.replay(
+        { organizationId: state.principal.organizationId },
+        callIds,
+        typeof input.afterEventId === 'string' ? input.afterEventId : undefined,
+        this.configuration.values.api.securityEventReplayMaximum,
+      );
+      for (const event of replay.events) this.sendEvent(client, event);
+      this.logger?.event('log', 'security.websocket.replay', {
+        organizationId: state.principal.organizationId,
+        event: 'security.websocket.replay',
+        outcome: replay.status,
+        queueDepth: replay.events.length,
+      });
+      this.telemetry?.increment('swar_backend_websocket_replay_total', {
+        status: replay.status,
+      });
+      this.telemetry?.gauge('swar_backend_websocket_replay_depth', replay.events.length);
+      return {
+        event: 'security.subscribed',
+        data: {
+          callIds,
+          replayStatus: replay.status,
+          replayedCount: replay.events.length,
+          oldestAvailableEventId: replay.oldestAvailableEventId,
+          latestAvailableEventId: replay.latestAvailableEventId,
+        },
+      };
+    }
     const tenantReplay = this.replay.filter(
       (event) =>
         event.organizationId === state.principal.organizationId && state.callIds.has(event.callId),
@@ -150,13 +187,43 @@ export class SecurityEventsGateway
   }
 
   @SubscribeMessage('security.ack')
-  acknowledge(@ConnectedSocket() client: WebSocket, @MessageBody() input: { eventId?: unknown }) {
+  async acknowledge(
+    @ConnectedSocket() client: WebSocket,
+    @MessageBody() input: { eventId?: unknown },
+  ) {
     const state = this.requireState(client);
     if (!this.consumeInbound(client, state)) return undefined;
-    if (typeof input.eventId !== 'string' || !this.fingerprints.has(input.eventId)) {
+    if (typeof input.eventId !== 'string') {
+      return this.error('ACK_INVALID');
+    }
+    if (this.outbox !== undefined) {
+      try {
+        await this.outbox.acknowledge(
+          { organizationId: state.principal.organizationId },
+          state.principal.membershipId,
+          [...state.callIds],
+          input.eventId,
+        );
+      } catch {
+        return this.error('ACK_INVALID');
+      }
+    } else if (
+      !this.replay.some(
+        (event) =>
+          event.eventId === input.eventId &&
+          event.organizationId === state.principal.organizationId &&
+          state.callIds.has(event.callId),
+      )
+    ) {
       return this.error('ACK_INVALID');
     }
     state.lastAcknowledgedEventId = input.eventId;
+    this.logger?.event('log', 'security.websocket.acknowledged', {
+      organizationId: state.principal.organizationId,
+      event: 'security.websocket.acknowledged',
+      outcome: 'ACKNOWLEDGED',
+    });
+    this.telemetry?.increment('swar_backend_websocket_ack_total', { status: 'ACKNOWLEDGED' });
     return { event: 'security.acknowledged', data: { eventId: input.eventId } };
   }
 

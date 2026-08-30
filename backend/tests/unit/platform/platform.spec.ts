@@ -20,6 +20,7 @@ import {
 } from '../../../src/config/configuration';
 import { EnvironmentValidationError, parseEnvironment } from '../../../src/config/env.schema';
 import { IdempotencyConflictError } from '../../../src/database/database.errors';
+import { TransactionService } from '../../../src/database/transaction.service';
 import { validTestEnvironment } from '../../test-environment';
 
 describe('Phase H platform units', () => {
@@ -76,7 +77,16 @@ describe('Phase H platform units', () => {
       parseEnvironment(validTestEnvironment({ ...production, ML_EVIDENCE_MODE: 'SHADOW' })),
     ).toThrow(/ML_EVIDENCE_MODE/u);
     expect(() =>
-      parseEnvironment(validTestEnvironment({ ...production, ML_EVIDENCE_MODE: 'CALIBRATED' })),
+      parseEnvironment(
+        validTestEnvironment({
+          ...production,
+          ML_EVIDENCE_MODE: 'CALIBRATED',
+          RISK_INTERVENTION_MODE: 'PRODUCTION',
+          PHASE_O_SCIENTIFIC_STATUS: 'PROMOTED',
+          PHASE_P_PRODUCTION_STATUS: 'PROMOTED',
+          PHASE_Q_PRODUCTION_STATUS: 'PROMOTED',
+        }),
+      ),
     ).not.toThrow();
   });
 
@@ -93,6 +103,37 @@ describe('Phase H platform units', () => {
     ).toThrow(
       /PHASE_O_SCIENTIFIC_STATUS|PHASE_P_PRODUCTION_STATUS|PHASE_Q_PRODUCTION_STATUS|RISK_INTERVENTION_MODE/u,
     );
+  });
+
+  it('retries an adapter-level serializable write conflict with a bounded backoff', async () => {
+    const transaction = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('TransactionWriteConflict'))
+      .mockResolvedValueOnce('committed');
+    const service = new TransactionService({ client: { $transaction: transaction } } as never);
+    await expect(service.serializable(() => Promise.resolve('operation'))).resolves.toBe(
+      'committed',
+    );
+    expect(transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses engineering demo/shadow intervention mode in production configuration', () => {
+    expect(() =>
+      parseEnvironment(
+        validTestEnvironment({
+          SWAR_ENV: 'production',
+          PUBLIC_API_URL: 'https://api.example.invalid/api/v1',
+          SECURITY_WS_URL: 'wss://api.example.invalid/ws/security',
+          ML_INTERNAL_URL: 'https://ml.example.invalid',
+          LIVEKIT_URL: 'wss://livekit.example.invalid',
+          DATABASE_URL:
+            'postgresql://swar:production-test-password@example.invalid:5432/swar_production',
+          CORS_ALLOWED_ORIGINS: 'https://app.example.invalid',
+          ML_EVIDENCE_MODE: 'CALIBRATED',
+          RISK_INTERVENTION_MODE: 'ENGINEERING_ONLY',
+        }),
+      ),
+    ).toThrow(/RISK_INTERVENTION_MODE/u);
   });
 
   it('prevents the backend configuration module from starting with an invalid environment', async () => {

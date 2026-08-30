@@ -268,6 +268,38 @@
         ]
       }
     },
+    "/health/metrics": {
+      "get": {
+        "operationId": "Health.getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health"
+        ],
+        "x-swar-auth-kind": "PUBLIC",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "NONE",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "INTERNAL_ERROR",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
     "/api/v1/calls": {
       "post": {
         "operationId": "Calls.create",
@@ -1294,220 +1326,6 @@
         ]
       }
     },
-    "/api/v1/risk-policies/active": {
-      "get": {
-        "operationId": "RiskPolicy.active",
-        "parameters": [
-          {
-            "name": "policyKey",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RiskPolicy"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Stable non-sensitive error envelope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Retrieve the active immutable policy version",
-        "tags": [
-          "risk-policy"
-        ],
-        "x-swar-auth-kind": "USER_ACCESS_JWT",
-        "x-swar-required-permissions": [
-          "risk-policy.read"
-        ],
-        "x-swar-rate-limit-category": "QUERY",
-        "x-swar-idempotency": "NOT_APPLICABLE",
-        "x-swar-error-codes": [
-          "DEPENDENCY_UNAVAILABLE",
-          "FORBIDDEN",
-          "INTERNAL_ERROR",
-          "NOT_FOUND",
-          "RATE_LIMITED",
-          "TOKEN_INVALID",
-          "VALIDATION_FAILED"
-        ]
-      }
-    },
-    "/api/v1/risk-policies/{policyKey}": {
-      "put": {
-        "operationId": "RiskPolicy.put",
-        "parameters": [
-          {
-            "name": "policyKey",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PutRiskPolicyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RiskPolicy"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Stable non-sensitive error envelope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create and optionally activate an immutable risk-policy version",
-        "tags": [
-          "risk-policy"
-        ],
-        "x-swar-auth-kind": "USER_ACCESS_JWT",
-        "x-swar-required-permissions": [
-          "risk-policy.manage"
-        ],
-        "x-swar-rate-limit-category": "SENSITIVE",
-        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
-        "x-swar-error-codes": [
-          "CONFLICT",
-          "DEPENDENCY_UNAVAILABLE",
-          "FORBIDDEN",
-          "IDEMPOTENCY_KEY_CONFLICT",
-          "IDEMPOTENCY_KEY_REQUIRED",
-          "INTERNAL_ERROR",
-          "NOT_FOUND",
-          "RATE_LIMITED",
-          "RISK_POLICY_INVALID",
-          "RISK_PRODUCTION_ACTIVATION_BLOCKED",
-          "TOKEN_INVALID",
-          "VALIDATION_FAILED"
-        ]
-      }
-    },
-    "/api/v1/media/livekit/webhook": {
-      "post": {
-        "operationId": "LiveKitWebhook.receive",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "description": "LiveKit webhook signature.",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "Raw LiveKit lifecycle body. Its signed bytes are verified before field use.",
-          "content": {
-            "application/webhook+json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "default": {
-            "description": "Stable non-sensitive error envelope.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "liveKitWebhook": []
-          }
-        ],
-        "summary": "Verify a signed LiveKit lifecycle webhook before media binding",
-        "tags": [
-          "media-webhooks"
-        ],
-        "x-swar-auth-kind": "SIGNED_WEBHOOK",
-        "x-swar-required-permissions": [],
-        "x-swar-rate-limit-category": "NONE",
-        "x-swar-idempotency": "VERIFIED_EVENT_ID_AND_BODY_HASH",
-        "x-swar-error-codes": [
-          "CONFLICT",
-          "INTERNAL_ERROR",
-          "VALIDATION_FAILED",
-          "WEBHOOK_AUTHENTICATION_FAILED",
-          "WEBHOOK_EVENT_INVALID"
-        ]
-      }
-    },
     "/api/v1/interventions/{interventionId}/verification-challenges": {
       "post": {
         "operationId": "Interventions.request",
@@ -1748,6 +1566,220 @@
           "RATE_LIMITED",
           "TOKEN_INVALID",
           "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/risk-policies/active": {
+      "get": {
+        "operationId": "RiskPolicy.active",
+        "parameters": [
+          {
+            "name": "policyKey",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve the active immutable policy version",
+        "tags": [
+          "risk-policy"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-policy.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/risk-policies/{policyKey}": {
+      "put": {
+        "operationId": "RiskPolicy.put",
+        "parameters": [
+          {
+            "name": "policyKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutRiskPolicyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskPolicy"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create and optionally activate an immutable risk-policy version",
+        "tags": [
+          "risk-policy"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-policy.manage"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "RISK_POLICY_INVALID",
+          "RISK_PRODUCTION_ACTIVATION_BLOCKED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/media/livekit/webhook": {
+      "post": {
+        "operationId": "LiveKitWebhook.receive",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "LiveKit webhook signature.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Raw LiveKit lifecycle body. Its signed bytes are verified before field use.",
+          "content": {
+            "application/webhook+json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "liveKitWebhook": []
+          }
+        ],
+        "summary": "Verify a signed LiveKit lifecycle webhook before media binding",
+        "tags": [
+          "media-webhooks"
+        ],
+        "x-swar-auth-kind": "SIGNED_WEBHOOK",
+        "x-swar-required-permissions": [],
+        "x-swar-rate-limit-category": "NONE",
+        "x-swar-idempotency": "VERIFIED_EVENT_ID_AND_BODY_HASH",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "INTERNAL_ERROR",
+          "VALIDATION_FAILED",
+          "WEBHOOK_AUTHENTICATION_FAILED",
+          "WEBHOOK_EVENT_INVALID"
         ]
       }
     }
@@ -2073,34 +2105,6 @@
           "observedAt"
         ]
       },
-      "PutRiskPolicyDto": {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "string",
-            "maxLength": 40
-          },
-          "schemaVersion": {
-            "type": "string",
-            "maxLength": 40,
-            "example": "1.0.0"
-          },
-          "policyDocument": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "activate": {
-            "type": "boolean",
-            "description": "Activate this immutable version after creation."
-          }
-        },
-        "required": [
-          "version",
-          "schemaVersion",
-          "policyDocument",
-          "activate"
-        ]
-      },
       "CreateVerificationChallengeDto": {
         "type": "object",
         "properties": {
@@ -2151,6 +2155,34 @@
         },
         "required": [
           "verificationChallengeId"
+        ]
+      },
+      "PutRiskPolicyDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "schemaVersion": {
+            "type": "string",
+            "maxLength": 40,
+            "example": "1.0.0"
+          },
+          "policyDocument": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "activate": {
+            "type": "boolean",
+            "description": "Activate this immutable version after creation."
+          }
+        },
+        "required": [
+          "version",
+          "schemaVersion",
+          "policyDocument",
+          "activate"
         ]
       },
       "ErrorEnvelope": {
@@ -2351,6 +2383,7 @@
           "riskEventId",
           "callId",
           "eventSequence",
+          "mode",
           "priorState",
           "state",
           "reasonCode",
@@ -2370,6 +2403,13 @@
           "eventSequence": {
             "type": "string",
             "pattern": "^\\d+$"
+          },
+          "mode": {
+            "enum": [
+              "DEMO",
+              "SHADOW",
+              "PRODUCTION"
+            ]
           },
           "priorState": {
             "enum": [
@@ -2414,6 +2454,7 @@
           "evidenceMode",
           "productionEligible",
           "activationSuppressed",
+          "activationBlockerCodes",
           "reasonCode",
           "policyVersion",
           "thresholdVersion",
@@ -2468,6 +2509,13 @@
           },
           "activationSuppressed": {
             "type": "boolean"
+          },
+          "activationBlockerCodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80
+            }
           },
           "reasonCode": {
             "type": "string",

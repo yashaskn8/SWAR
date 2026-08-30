@@ -4,8 +4,16 @@ import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from './prisma.service';
 import type { TransactionClient } from './database.types';
 
-const MAX_TRANSACTION_ATTEMPTS = 3;
+const MAX_TRANSACTION_ATTEMPTS = 5;
 const RETRYABLE_TRANSACTION_CODES = new Set(['P2034']);
+
+function isRetryableWriteConflict(error: unknown): boolean {
+  return (
+    (error instanceof Prisma.PrismaClientKnownRequestError &&
+      RETRYABLE_TRANSACTION_CODES.has(error.code)) ||
+    (error instanceof Error && error.message.includes('TransactionWriteConflict'))
+  );
+}
 
 @Injectable()
 export class TransactionService {
@@ -22,12 +30,10 @@ export class TransactionService {
         });
       } catch (error) {
         lastError = error;
-        const retryable =
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          RETRYABLE_TRANSACTION_CODES.has(error.code);
-        if (!retryable || attempt === MAX_TRANSACTION_ATTEMPTS) {
+        if (!isRetryableWriteConflict(error) || attempt === MAX_TRANSACTION_ATTEMPTS) {
           throw error;
         }
+        await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** (attempt - 1)));
       }
     }
     throw lastError;

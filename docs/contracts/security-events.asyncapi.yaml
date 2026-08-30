@@ -2,7 +2,7 @@ asyncapi: 3.0.0
 info:
   title: SWAR security WebSocket API
   version: 1.0.0
-  description: Authenticated tenant-scoped security events at /ws/security. Outbound risk events are not rate limited.
+  description: Authenticated tenant-scoped security events at /ws/security. PostgreSQL-backed replay and acknowledgements use stable event IDs. Outbound risk events are not rate limited.
 servers:
   native:
     host: localhost:3000

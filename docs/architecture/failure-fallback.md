@@ -26,7 +26,8 @@ The system fails explicitly and preserves protection; it never manufactures low-
 | Forged/replayed webhook | Signature/timestamp/idempotency validation | Reject without binding mutation; alert/metric according to security policy. | Verification failure category/correlation. | Accept event based on payload alone. |
 | PostgreSQL outage | Repository/transaction error | Reject new durable mutations and policy changes; do not acknowledge uncommitted holds/releases; preserve currently enforced external hold; expose degraded service. | Operational error outside DB where possible; reconciliation after recovery. | Continue with unscoped memory-only tenant mutations or release hold. |
 | Database recovers after outage | Health/reconciliation | Reconcile idempotency keys, LiveKit lifecycle, analysis sessions and external action status before normal operation. | Reconciliation decisions and versions. | Replay duplicates without idempotency. |
-| WebSocket/client disconnect | Connection state | Server policy and hold continue; authorized client fetches current state after reconnect. | Delivery attempts/current state version. | Release hold or reset state. |
+| WebSocket/client disconnect | Connection state | Server policy and hold continue; authorized client reconnects and replays the tenant/call-scoped durable outbox from its last event ID. | Stable event ID, bounded delivery attempts, acknowledgement and current state version. | Release hold, reset state, cross-tenant replay, or create a new event ID for the same delivery. |
+| Security-event callback outage | Bounded outbox delivery failure | Retain the committed event, retry with stable identity and exponential backoff up to the configured maximum, then expose terminal failure for operations. | Attempt count, next attempt, non-sensitive failure code and mode. | Recompute the decision, drop silently, or log payload/secrets. |
 | Dashboard outage | Health/availability | Customer protection, evidence ingestion, policy, and holds continue independently. | Operational health only. | Make dashboard a required policy hop. |
 | Inference overload | Bounded queue/latency/stale threshold | Bound queues, reject/drop stale windows, report degraded coverage, prioritize current work according to approved policy. | Queue/stale counts and coverage, no audio. | Let delayed windows alter current state. |
 
@@ -41,4 +42,3 @@ The system fails explicitly and preserves protection; it never manufactures low-
 ## Operator-visible degraded modes
 
 Degraded status may describe media coverage, ML readiness, database availability, event delivery, or client connectivity. It is operational metadata, not a new public risk state. User-facing risk remains one of the four frozen states when sufficient evidence exists; otherwise the workflow continues monitoring and applies trusted step-up according to backend policy.
-

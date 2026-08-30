@@ -2,6 +2,7 @@ export type SecurityEventType =
   'risk.state.changed' | 'intervention.required' | 'call.ended' | 'dashboard.risk-event.created';
 
 export interface SecurityEvent {
+  outboxId?: string;
   eventId: string;
   eventType: SecurityEventType;
   schemaVersion: string;
@@ -13,6 +14,8 @@ export interface SecurityEvent {
     state?: string;
     reasonCode?: string;
     policyVersion?: string;
+    mode?: 'DEMO' | 'SHADOW' | 'PRODUCTION';
+    interventionType?: string;
   };
 }
 

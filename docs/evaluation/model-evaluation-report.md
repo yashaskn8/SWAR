@@ -92,6 +92,13 @@ point, model choice, slice definition, or promotion gate.
 | Target-hardware latency/memory | Compatibility observations are not Phase O distributions | No target or SLA |
 | Model promotion | Blocked | Phase P and Q locked |
 
+Repository recheck on 2026-08-31 found only
+`ml/data/manifests/data-version.example.jsonl`, whose identifiers and labels are explicitly marked
+`EXAMPLE_ONLY`, and `ml/config/calibration.json`, whose status remains
+`BLOCKED_VALIDATION_REQUIRED`. No non-example manifest, governed external data root, score-record
+artifact, fitted calibration package, operating point, promotion approval, or target-hardware
+profile was supplied. The three scientific exit criteria above therefore remain unchecked.
+
 ## Privacy and integrity
 
 The framework reads governed artifacts supplied at execution time and writes aggregate JSON only

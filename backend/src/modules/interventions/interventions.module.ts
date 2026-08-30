@@ -7,6 +7,7 @@ import { InterventionPort } from './intervention.port';
 import { InterventionsService } from './interventions.service';
 import { InterventionsController } from './interventions.controller';
 import { StepUpService } from './step-up.service';
+import { EngineeringInterventionExecutorService } from './engineering-intervention-executor.service';
 
 @Module({
   imports: [AuditModule, AuthModule],
@@ -16,7 +17,13 @@ import { StepUpService } from './step-up.service';
     { provide: InterventionPort, useExisting: DemoTransactionHoldAdapter },
     InterventionsService,
     StepUpService,
+    EngineeringInterventionExecutorService,
   ],
-  exports: [InterventionsService, StepUpService, InterventionPort],
+  exports: [
+    InterventionsService,
+    StepUpService,
+    InterventionPort,
+    EngineeringInterventionExecutorService,
+  ],
 })
 export class InterventionsModule {}

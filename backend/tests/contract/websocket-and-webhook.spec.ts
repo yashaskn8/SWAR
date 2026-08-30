@@ -13,6 +13,7 @@ import type { CallQueriesService } from '../../src/modules/calls/call-queries.se
 import { LiveKitWebhookController } from '../../src/modules/media/livekit-webhook.controller';
 import type { TrackBindingService } from '../../src/modules/media/track-binding.service';
 import { SecurityEventsGateway } from '../../src/modules/security-events/security-events.gateway';
+import type { SecurityEventOutboxRepository } from '../../src/modules/security-events/security-event-outbox.repository';
 import { setValidTestEnvironment } from '../test-environment';
 
 interface FakeSocket {
@@ -151,5 +152,47 @@ describe('Phase J WebSocket and webhook adapters', () => {
       ),
     ).rejects.toBeDefined();
     expect(handleVerifiedLifecycle).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses tenant-scoped durable replay and rejects acknowledgements outside the subscription', async () => {
+    setValidTestEnvironment();
+    const organizationId = '018f0000-0000-7000-8000-000000000021';
+    const callId = '018f0000-0000-7000-8000-000000000030';
+    const eventId = `evt_${'c'.repeat(64)}`;
+    const authenticate = vi.fn().mockResolvedValue(principal(organizationId));
+    const assertReadable = vi.fn().mockResolvedValue(undefined);
+    const replay = vi.fn().mockResolvedValue({
+      status: 'COMPLETE',
+      events: [],
+      oldestAvailableEventId: eventId,
+      latestAvailableEventId: eventId,
+    });
+    const acknowledge = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('cross-tenant or unsubscribed event'));
+    const gateway = new SecurityEventsGateway(
+      { authenticate } as unknown as AccessSessionAuthenticator,
+      { assertReadable } as unknown as CallQueriesService,
+      new ConfigurationService(process.env),
+      { replay, acknowledge } as unknown as SecurityEventOutboxRepository,
+    );
+    const tenant = client();
+    await gateway.handleConnection(socket(tenant), {
+      headers: { authorization: 'Bearer tenant-a-token' },
+    } as IncomingMessage);
+    await expect(
+      gateway.subscribe(socket(tenant), { callIds: [callId], afterEventId: eventId }),
+    ).resolves.toMatchObject({
+      event: 'security.subscribed',
+      data: { replayStatus: 'COMPLETE', oldestAvailableEventId: eventId },
+    });
+    expect(replay).toHaveBeenCalledWith({ organizationId }, [callId], eventId, expect.any(Number));
+    await expect(gateway.acknowledge(socket(tenant), { eventId })).resolves.toMatchObject({
+      event: 'security.acknowledged',
+    });
+    await expect(
+      gateway.acknowledge(socket(tenant), { eventId: `evt_${'d'.repeat(64)}` }),
+    ).resolves.toMatchObject({ event: 'security.error', data: { code: 'ACK_INVALID' } });
   });
 });

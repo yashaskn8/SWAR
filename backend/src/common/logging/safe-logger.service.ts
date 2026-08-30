@@ -22,6 +22,21 @@ const allowedField = new Set([
   'reason',
   'context',
   'message',
+  'organizationId',
+  'callId',
+  'analysisSessionId',
+  'riskAssessmentId',
+  'riskEventId',
+  'interventionId',
+  'outboxId',
+  'mode',
+  'state',
+  'outcome',
+  'queueDepth',
+  'latencyMs',
+  'attemptCount',
+  'deliveryStatus',
+  'readinessFailure',
 ]);
 
 export function redactText(value: string): string {

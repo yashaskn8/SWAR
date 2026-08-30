@@ -58,3 +58,7 @@ that state.
 Phase O passes only after all required artifacts are measured, reviewed, versioned, reproducible,
 documented, and marked `PROMOTED` or an explicitly authorized limited profile. Until then Phase P
 and Phase Q remain locked and Phase R is forbidden.
+
+Engineering-only authorization permits the Phase P serving and Phase Q headless orchestration code
+to be tested with explicitly tagged fixture/shadow evidence. It does not alter this unlock rule:
+production serving, production risk/intervention activation, and Phase R remain fail-closed.

@@ -32,11 +32,13 @@ sequenceDiagram
     LK-->>ML: P=WebRTC DTLS-SRTP, A=subscriber grant, D=frames and participant/track metadata
     ML->>ML: P=in-process, A=validated analysis binding, D=bounded PCM quality and rolling windows
     ML-->>Nest: P=private HTTPS/TLS, A=ML service credential plus idempotency key, D=FAST or INSUFFICIENT_EVIDENCE revision
-    Nest->>DB: P=PostgreSQL/TLS, A=DB service credential, D=accepted evidence revision and temporal transition
+    Nest->>DB: P=PostgreSQL/TLS, A=DB service credential, D=atomic evidence, assessment, tagged transition/action decision, audit and outbox
     ML-->>Nest: P=private HTTPS/TLS, A=ML service credential plus idempotency key, D=DEEP revision for same window
-    Nest->>DB: P=PostgreSQL/TLS, A=DB service credential, D=deterministic replacement and risk recomputation
+    Nest->>DB: P=PostgreSQL/TLS, A=DB service credential, D=atomic revision supersession and deterministic risk/outbox recomputation
     alt policy requires warning or hold
-        Nest-->>Customer: P=WSS/TLS, A=authorized access session, D=versioned risk and intervention event
+        DB-->>Nest: P=PostgreSQL/TLS, A=tenant/call scope, D=durable stable-ID security-event outbox
+        Nest-->>Customer: P=WSS/TLS, A=authorized membership plus call access, D=versioned risk/intervention event and replay cursor
+        Customer-->>Nest: P=WSS/TLS, A=same tenant/call authorization, D=stable event acknowledgement
         Nest->>Action: P=HTTPS/TLS, A=service credential plus action idempotency key, D=call/action-bound hold
         Action-->>Nest: P=HTTPS/TLS, A=service credential, D=hold status
         Nest->>DB: P=PostgreSQL/TLS, A=DB service credential, D=intervention action and audit transaction
@@ -58,6 +60,10 @@ sequenceDiagram
 4. If the caller publishes multiple audio tracks, analysis does not guess: NestJS policy selects exactly one binding or stops with an explicit binding error.
 5. If the caller republishes after reconnect, the new `track_sid` is quarantined until a verified webhook and authorized binding revision replace the old SID. Old and new audio never merge silently.
 6. The customer hears the LiveKit-routed caller track; SWAR does not create a separate client-upload analysis stream.
+7. Engineering `DEMO` and `SHADOW` modes remain explicit at evidence, assessment, transition, action,
+   and event boundaries. Only independently promoted calibrated evidence may enter `PRODUCTION`.
+8. The evidence revision, risk assessment, optional tagged transition/intervention decision, audit,
+   and outbox insert commit or roll back as one PostgreSQL transaction.
 
 ## 2. Enrollment, encrypted storage, revocation, and deletion
 
