@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "status": "BLOCKED_VALIDATION_REQUIRED",
+  "calibration_package_version": null,
+  "manifest_sha256": null,
+  "registry_sha256": "b69a744116d954c608e61f686648e6b41f1808e370029e1e968ca26759e7e521",
+  "preprocessing_version": "phase-l-audio-v1+sha256:600705d994419df79867cdbc8dac56088495d09e7aa6611543bfbdd296bf0f74",
+  "operating_points": [],
+  "blocker_codes": [
+    "GOVERNED_DATA_ROOT_NOT_PROVIDED",
+    "GOVERNED_MANIFEST_NOT_PROVIDED",
+    "DATA_STEWARD_APPROVAL_NOT_PROVIDED",
+    "TARGET_HARDWARE_PROFILE_NOT_APPROVED"
+  ],
+  "promotion_decision": "BLOCKED"
+}

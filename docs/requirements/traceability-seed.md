@@ -233,3 +233,18 @@ or frontend behavior.
 | Missing/hash/architecture/device/timeout/dtype/shape/direction/cleanup and real-checkpoint verification | [Phase N model tests](../../ml/tests/unit/models/) | MLR-ID-001, MLR-SPOOF-001..002, MLR-GOV-002; AC-ML-001..005 |
 
 Concrete command outcomes are recorded in [Phase N exit-gate evidence](../implementation/phase-status.md#phase-n-exit-gate-evidence).
+
+## 13. Phase O evaluation/calibration framework evidence
+
+Phase O has a complete fail-closed software framework, but scientific execution and promotion are
+blocked because no approved external governed data root or non-example frozen manifest exists.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| FAR/FRR/EER, spoof precision/recall/F1/EER, uncertainty, zero-denominator, and score-direction definitions | [Evaluation metrics](../../ml/evaluation/metrics/) and [metric tests](../../ml/tests/unit/evaluation/test_metrics.py) | MLR-ID-001, MLR-SPOOF-001; AC-ML-006..007 |
+| Speaker/source/lineage/final-generator/calibration leakage rejection | [Phase O split validation](../../ml/evaluation/split_validation.py) and [split tests](../../ml/tests/unit/evaluation/test_split_validation.py) | MLR-GOV-001, MLR-CAL-001, MLR-OOD-001; AC-ML-005, AC-ML-008 |
+| Validation-only Platt calibration and complementary RawNet2/AASIST fusion with content-derived versions | [Score calibrator](../../ml/calibration/score_calibrator.py), [spoof fusion](../../ml/calibration/spoof_evidence_fusion.py), and [calibration tests](../../ml/tests/unit/evaluation/test_calibration.py) | FR-SPOOF-003, MLR-CAL-001; AC-ML-003 |
+| Separate clean/seen, final-OOD, codec/degradation, slice/failure, and named-hardware latency records | [Evaluation runners](../../ml/evaluation/) and [runner tests](../../ml/tests/unit/evaluation/test_protocol_and_runners.py) | MLR-OOD-001, MLR-ROB-001, MLR-LANG-001, MLR-LAT-001; AC-ML-008..010 |
+| Machine-readable blocked state with no thresholds/calibrators plus explicit scientific/promotion gate | [Blocked calibration package](../../ml/config/calibration.json), [evaluation report](../evaluation/model-evaluation-report.md), and [promotion gates](../evaluation/promotion-gates.md) | MLR-GOV-001..002, MLR-CAL-001; AC-A-002, AC-ML-003..010 |
+
+Concrete command outcomes and the exact blocker are recorded in [Phase O evidence](../implementation/phase-status.md#phase-o-blocked-gate-evidence).

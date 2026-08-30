@@ -1,6 +1,6 @@
 # SWAR Implementation Phase Status
 
-Last updated: 2026-08-29  
+Last updated: 2026-08-30
 Contract: `AGENTS.md` 1.0.0  
 Status values: `NOT_STARTED`, `IN_PROGRESS`, `COMPLETE`, `BLOCKED`.
 
@@ -22,7 +22,7 @@ Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED 
 | L | Audio preprocessing | J, K | COMPLETE | Versioned 16 kHz mono normalization; chunk-invariant native SoXR resampling; bounded exact 4-second/1-second windows; speech/quality abstention; shared training/runtime transforms; lineaged telephony-like evaluation recipes; 43/43 focused audio, 63/63 complete ML, and 13/13 Phase J contract tests plus all static/documentation/boundary/privacy checks passed on 2026-08-29. |
 | M | ML baseline/development loop | H, J, K, L | COMPLETE | Dual-gated non-scientific stub with production startup rejection; authenticated/idempotent FAST/DEEP/insufficient/error callback loop; deterministic Phase K/L-bound spectral/logistic baseline and metric-free data blocker; 12/12 focused Phase M ML, 75/75 complete ML, 4/4 backend loop, 57/57 active backend, 13/13 contract, 10/10 native database, and 11/11 native auth tests passed on 2026-08-29. |
 | N | Real model integration | K, L, M | COMPLETE | Three hash-verified licensed ECAPA/RawNet2/AASIST adapters; versioned score semantics and lifecycle; deterministic non-human CPU compatibility experiment; 89/89 ML tests including real checkpoint smoke plus all Phase N static/documentation/boundary/security checks passed on 2026-08-29. |
-| O | Evaluation/calibration | K, L, N | NOT_STARTED | - |
+| O | Evaluation/calibration | K, L, N | BLOCKED | Fail-closed evaluation/calibration framework and 18/18 focused tests pass; no approved external governed data root, non-example frozen manifest, data-steward approval, measured score records, or target-hardware profile exists, so no metric/threshold/calibration/promotion is claimed and P remains locked. |
 | P | ML serving/media subscriber | H, J, L, N, O | NOT_STARTED | - |
 | Q | Risk engine/interventions | F, G, I, J, O, P | NOT_STARTED | - |
 | R | Frontend foundation | Q backend-completion PASS; J contracts | NOT_STARTED | - |
@@ -37,9 +37,11 @@ Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED 
 
 ## Dependency gate
 
-Phases A through N are complete. Phase O is the next mandatory phase, but scientific execution is
-blocked until an approved external governed data root and non-example frozen manifest satisfy its
-dependency gate. Phase O remains `NOT_STARTED`; no threshold, calibration, or metric is promoted.
+Phases A through N are complete. Phase O's fail-closed software and documentation framework is
+implemented and tested, but scientific execution remains `BLOCKED` until an approved external
+governed data root, non-example frozen manifest, data-steward approval, measured exact-version score
+records, and named target-hardware profile satisfy its gate. No threshold, calibrator, probability,
+metric result, latency target, or model profile is promoted. Phase P and Phase Q remain locked.
 
 ## Phase A exit-gate evidence
 
@@ -238,3 +240,59 @@ dependency gate. Phase O remains `NOT_STARTED`; no threshold, calibration, or me
 - Documentation and traceability: PASS - [model integration notes](../evaluation/model-integration-notes.md), [model registry](../../ml/config/model_registry.yaml), [checkpoint acquisition contract](../../ml/checkpoints/README.md), and reproducible experiment runner document model provenance, semantics, lifecycle, claim limits, exact verification, and Phase O handoff.
 - Remaining validation: no approved external governed data root or non-example frozen manifest exists. Dataset-purpose/license acknowledgment, FAR/FRR/EER, precision/recall/F1/EER, subgroup/OOD/codec/noise results, calibration, complementarity, memory, target-hardware latency distributions, thresholds, and promotion decisions remain `VALIDATION REQUIRED`. Phase O must remain fail-closed until a data steward supplies the missing evidence.
 - Phase restriction: PASS - no scientific metric, calibration/threshold, FastAPI production service, LiveKit subscriber, backend risk policy, intervention, frontend, persistent audio, schema/migration, real enterprise integration, Docker artifact, or Phase O implementation was added.
+
+## Phase O blocked-gate evidence
+
+- Dependency recovery: PASS for completed prerequisites - Phases K, L, and N remain `COMPLETE`;
+  the Phase K source/license register and split policy, Phase L preprocessing/quality/degradation
+  contract, and Phase N pinned model registry/adapters/checkpoints were inspected. The current branch
+  began exactly at Phase N commit `fa7be60`. The Phase O prompt SHA-256 published by the handbook is
+  `E4C545F130D800A59A5E85701D2080F32291307BF0E5CAF6F1F5B102B9AD00B8`.
+- Blocking consistency issue: the only committed manifest is explicitly fictional schema
+  documentation and no approved external governed data root exists. Scientific execution would
+  violate MLR-GOV-001 and the no-bluff policy. The minimal authorized outcome is a tested fail-closed
+  framework plus exact blocker evidence; no data, threshold, calibration, or result was fabricated.
+- Metric framework: PASS - speaker FAR/FRR/EER, spoof precision/recall/F1/EER, Wilson rate
+  intervals, explicit positive-class/score-direction handling, Brier score, expected calibration
+  error, deterministic EER handling, and explicit undefined zero-denominator precision are
+  implemented without NaN output.
+- Split/version integrity: PASS - Phase O repeats source, speaker, lineage, final-generator,
+  enrollment/test, and validation-only calibration gates. Typed score records bind manifest,
+  registry, preprocessing, model, checkpoint, score name/direction, task, split, failure, condition,
+  and calibration version. Mismatches and final-OOD calibration fail closed.
+- Calibration/fusion: PASS for framework only - deterministic Platt and complementary
+  RawNet2/AASIST logistic fusion fit only on `VALIDATION` and serialize content-derived versions plus
+  data/model/preprocessing/checkpoint provenance. No coefficient or operating point is committed.
+  `ml/config/calibration.json` is `BLOCKED_VALIDATION_REQUIRED`, has no manifest hash, calibration
+  package version, or operating point, and records promotion decision `BLOCKED`.
+- Evaluation runners: PASS for framework only - clean/seen, complete final-generator OOD,
+  codec/noise/degradation, slice/failure, and named-hardware cold/warm latency/memory results remain
+  separate. Each CLI without governed inputs exited `2`, emitted stable blocker codes, and contained
+  no metrics. Generated unit-test arrays are non-scientific and remain test-only.
+- Focused and full ML checks: PASS - `python -m pytest tests/unit/evaluation -q` passed 18/18;
+  complete `python -m pytest` passed 106 tests with one explicitly conditional real-checkpoint smoke
+  skipped; Ruff lint and format, Python byte compilation, and `pip check` passed.
+- Backend/contract regression: PASS - complete backend Vitest passed 57/57 active tests with 14
+  database/auth cases skipped in that non-native run; Phase J contract tests passed 13/13; ESLint,
+  strict TypeScript typecheck, Nest build, and Prettier passed. Prettier success includes four
+  preserved pre-existing unstaged backend formatting edits that are not part of Phase O.
+- Native PostgreSQL regression: PASS after required sandbox rerun - the first sandboxed database
+  attempt could initialize but Windows rejected `pg_ctl` restricted-token creation. The exact
+  command reran outside the sandbox: migration apply/status/no-op replay plus 10/10 database tests
+  passed and the temporary cluster stopped. The native authentication/RBAC/tenant-isolation run
+  then passed 11/11 and stopped its temporary cluster.
+- Documentation/boundaries: PASS - documentation headings/links passed for 55 Markdown files;
+  actual repository boundaries and negative container/cross-layer fixtures passed. No frontend,
+  service dependency, contract schema, database schema/migration, raw-audio path, Docker artifact,
+  business risk engine, serving endpoint, or Phase P/Q implementation was added.
+- Security/privacy: PASS - evaluation outputs are aggregate and retain failure counts without source
+  audio or sample-level report data. No audio, embedding, feature array, raw score record, private
+  path, token, credential, or personal identity is committed. Final OOD is structurally prohibited
+  from calibration or tuning.
+- Remaining validation: approved external governed data root; non-example frozen manifest and
+  hashes; data-steward purpose/license/retention approval; exact-version measured model score records;
+  speaker/spoof/calibration/subgroup/OOD/codec/noise/language results; failed/insufficient sample
+  coverage; named target-hardware cold/warm latency, queue, memory and concurrency distributions;
+  authorized operating-point and promotion decision. All remain `VALIDATION REQUIRED`.
+- Gate verdict: `BLOCKED`, not `COMPLETE`. Phase P is not unlocked, Phase Q is not started, and the
+  Phase R backend-completion gate remains locked.
