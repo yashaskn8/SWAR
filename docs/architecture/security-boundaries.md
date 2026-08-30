@@ -15,7 +15,7 @@ Date: 2026-08-28
 | ML -> NestJS | Evidence/error event | Evidence ingestion adapter | TLS, ML service identity, session/binding/sequence/revision/idempotency validation | Reject/ignore invalid event; audit non-sensitive reason. |
 | NestJS -> PostgreSQL | Backend query/transaction | Tenant data store | DB service credential, parameterized repository interface, organization scope, least privilege, transactions | Fail closed for mutations; active protection cannot be silently cleared. |
 | NestJS -> protected action/verifier | Hold/release/challenge request | Contracted or SIH sample adapter | Service authentication, call/action/challenge binding, expiry, idempotency | Retain hold or require trusted fallback. |
-| NestJS -> WebSocket subscriber | Network client requesting events/replay/ack | Durable tenant security-event outbox | Access JWT, active membership, permission, organization/call authorization, stable event ID and bounded replay | Reject without publishing or acknowledging another tenant/call event. |
+| NestJS -> WebSocket subscriber | Network client requesting events/replay/ack | Durable tenant security-event outbox | One bounded bearer credential, active session/membership revalidation on subscribe/publish/ack, organization/call authorization, strict stable event ID, connection/rate limits, and bounded replay | Disconnect revoked clients; reject ambiguous credentials, excess connections, invalid cursors, or another tenant/call event without publishing or acknowledging it. |
 | Operator -> services | Human/operator command | Native service management | OS/service identity, least privilege, audited access, secret separation | Reject unauthorized access; no content logging. |
 
 ## Credential inventory

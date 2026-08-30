@@ -44,6 +44,38 @@ function principal(organizationId: string): AuthPrincipal {
 }
 
 describe('Phase J WebSocket and webhook adapters', () => {
+  it('rejects ambiguous WebSocket credentials and enforces the authenticated connection bound', async () => {
+    setValidTestEnvironment({ SECURITY_WS_CONNECTION_MAXIMUM: '1' });
+    const authenticate = vi
+      .fn()
+      .mockResolvedValue(principal('018f0000-0000-7000-8000-000000000021'));
+    const gateway = new SecurityEventsGateway(
+      { authenticate } as unknown as AccessSessionAuthenticator,
+      { assertReadable: vi.fn() } as unknown as CallQueriesService,
+      new ConfigurationService(process.env),
+    );
+    const ambiguous = client();
+    await gateway.handleConnection(socket(ambiguous), {
+      headers: {
+        authorization: 'Bearer header-token',
+        'sec-websocket-protocol': 'swar.security.v1, swar.bearer.protocol-token',
+      },
+    } as IncomingMessage);
+    expect(ambiguous.close).toHaveBeenCalledWith(1008, 'AUTHENTICATION_REQUIRED');
+    expect(authenticate).not.toHaveBeenCalled();
+
+    const accepted = client();
+    await gateway.handleConnection(socket(accepted), {
+      headers: { authorization: 'Bearer tenant-a-token' },
+    } as IncomingMessage);
+    const excess = client();
+    await gateway.handleConnection(socket(excess), {
+      headers: { authorization: 'Bearer tenant-a-token' },
+    } as IncomingMessage);
+    expect(excess.close).toHaveBeenCalledWith(1013, 'CAPACITY_EXCEEDED');
+    expect(authenticate).toHaveBeenCalledTimes(1);
+  });
+
   it('authenticates WebSockets, scopes subscriptions, deduplicates, and reports replay boundaries', async () => {
     setValidTestEnvironment();
     const configuration = new ConfigurationService(process.env);
@@ -194,5 +226,100 @@ describe('Phase J WebSocket and webhook adapters', () => {
     await expect(
       gateway.acknowledge(socket(tenant), { eventId: `evt_${'d'.repeat(64)}` }),
     ).resolves.toMatchObject({ event: 'security.error', data: { code: 'ACK_INVALID' } });
+    await expect(
+      gateway.subscribe(socket(tenant), { callIds: [callId], afterEventId: 'invalid-cursor' }),
+    ).resolves.toMatchObject({ event: 'security.error', data: { code: 'SUBSCRIPTION_INVALID' } });
+    await expect(
+      gateway.acknowledge(socket(tenant), { eventId: 'invalid-event-id' }),
+    ).resolves.toMatchObject({ event: 'security.error', data: { code: 'ACK_INVALID' } });
+  });
+
+  it('reauthorizes active subscriptions before publication and acknowledgement', async () => {
+    setValidTestEnvironment();
+    const organizationId = '018f0000-0000-7000-8000-000000000021';
+    const callId = '018f0000-0000-7000-8000-000000000030';
+    const eventId = `evt_${'e'.repeat(64)}`;
+    let revoked = false;
+    const authenticate = vi.fn(() =>
+      revoked
+        ? Promise.reject(new Error('membership revoked'))
+        : Promise.resolve(principal(organizationId)),
+    );
+    const assertReadable = vi.fn().mockResolvedValue(undefined);
+    const configuration = new ConfigurationService(process.env);
+    const gateway = new SecurityEventsGateway(
+      { authenticate } as unknown as AccessSessionAuthenticator,
+      { assertReadable } as unknown as CallQueriesService,
+      configuration,
+    );
+    const publishingClient = client();
+    await gateway.handleConnection(socket(publishingClient), {
+      headers: { authorization: 'Bearer tenant-a-token' },
+    } as IncomingMessage);
+    await gateway.subscribe(socket(publishingClient), { callIds: [callId] });
+    publishingClient.send.mockClear();
+    revoked = true;
+    await gateway.publish({
+      eventId,
+      eventType: 'risk.state.changed',
+      schemaVersion: '1.1.0',
+      organizationId,
+      callId,
+      targetId: '018f0000-0000-7000-8000-000000000031',
+      occurredAt: new Date('2030-01-01T00:00:00Z'),
+      metadata: { mode: 'SHADOW', state: 'UNVERIFIED' },
+    });
+    expect(publishingClient.send).not.toHaveBeenCalled();
+    expect(publishingClient.close).toHaveBeenCalledWith(1008, 'AUTHORIZATION_REVOKED');
+
+    revoked = false;
+    const acknowledgingClient = client();
+    await gateway.handleConnection(socket(acknowledgingClient), {
+      headers: { authorization: 'Bearer tenant-a-token' },
+    } as IncomingMessage);
+    await gateway.subscribe(socket(acknowledgingClient), { callIds: [callId] });
+    revoked = true;
+    await expect(
+      gateway.acknowledge(socket(acknowledgingClient), { eventId }),
+    ).resolves.toMatchObject({ event: 'security.error', data: { code: 'ACK_FORBIDDEN' } });
+    expect(acknowledgingClient.close).toHaveBeenCalledWith(1008, 'AUTHORIZATION_REVOKED');
+  });
+
+  it('isolates a failed WebSocket send without blocking other authorized subscribers', async () => {
+    setValidTestEnvironment();
+    const organizationId = '018f0000-0000-7000-8000-000000000021';
+    const callId = '018f0000-0000-7000-8000-000000000030';
+    const authenticate = vi.fn().mockResolvedValue(principal(organizationId));
+    const gateway = new SecurityEventsGateway(
+      { authenticate } as unknown as AccessSessionAuthenticator,
+      { assertReadable: vi.fn().mockResolvedValue(undefined) } as unknown as CallQueriesService,
+      new ConfigurationService(process.env),
+    );
+    const broken = client();
+    const healthy = client();
+    for (const connected of [broken, healthy]) {
+      await gateway.handleConnection(socket(connected), {
+        headers: { authorization: 'Bearer tenant-a-token' },
+      } as IncomingMessage);
+      await gateway.subscribe(socket(connected), { callIds: [callId] });
+      connected.send.mockClear();
+    }
+    broken.send.mockImplementationOnce(() => {
+      throw new Error('socket write failed');
+    });
+    await expect(
+      gateway.publish({
+        eventId: `evt_${'f'.repeat(64)}`,
+        eventType: 'dashboard.risk-event.created',
+        schemaVersion: '1.1.0',
+        organizationId,
+        callId,
+        targetId: '018f0000-0000-7000-8000-000000000031',
+        occurredAt: new Date('2030-01-01T00:00:00Z'),
+        metadata: { mode: 'SHADOW', state: 'UNVERIFIED' },
+      }),
+    ).resolves.toBeUndefined();
+    expect(broken.close).toHaveBeenCalledWith(1011, 'DELIVERY_FAILED');
+    expect(healthy.send).toHaveBeenCalledTimes(1);
   });
 });

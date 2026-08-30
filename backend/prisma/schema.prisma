@@ -935,6 +935,8 @@ model Alert {
   recipientReference         String?             @db.VarChar(160)
   attemptCount               Int                 @default(0)
   nextAttemptAt              DateTime?           @db.Timestamptz(6)
+  dispatchLeaseId            String?             @db.Uuid
+  dispatchLeaseExpiresAt     DateTime?           @db.Timestamptz(6)
   deliveredAt                DateTime?           @db.Timestamptz(6)
   acknowledgedAt             DateTime?           @db.Timestamptz(6)
   failureCode                String?             @db.VarChar(80)
@@ -951,6 +953,7 @@ model Alert {
   @@unique([organizationId, idempotencyKey])
   @@unique([organizationId, externalEventId])
   @@index([organizationId, status, nextAttemptAt])
+  @@index([status, dispatchLeaseExpiresAt, nextAttemptAt])
   @@index([organizationId, callId, createdAt])
   @@index([organizationId, callId, externalEventId])
 }

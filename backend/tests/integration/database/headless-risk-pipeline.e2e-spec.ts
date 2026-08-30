@@ -322,9 +322,11 @@ describe.skipIf(!databaseEnabled)('headless atomic evidence-to-intervention loop
       throw new Error('Expected a stable external event id.');
     }
     for (const record of cloneOutbox) {
+      const dispatchLeaseId = randomUUID();
+      const dispatchLeaseExpiresAt = new Date(Date.now() + 10_000);
       await prisma.client.alert.update({
         where: { id: record.id },
-        data: { attemptCount: 1 },
+        data: { attemptCount: 1, dispatchLeaseId, dispatchLeaseExpiresAt },
       });
       if (record.externalEventId === firstEventId) {
         await securityOutbox.acknowledge(
@@ -334,7 +336,12 @@ describe.skipIf(!databaseEnabled)('headless atomic evidence-to-intervention loop
           firstEventId,
         );
       }
-      await securityOutbox.markDelivered({ ...record, attemptCount: 1 });
+      await securityOutbox.markDelivered({
+        ...record,
+        attemptCount: 1,
+        dispatchLeaseId,
+        dispatchLeaseExpiresAt,
+      });
     }
     const replay = await securityOutbox.replay(
       { organizationId: clone.organizationId },

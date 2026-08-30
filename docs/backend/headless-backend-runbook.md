@@ -79,11 +79,20 @@ intervention decisions, durable security-event outbox records, and non-sensitive
 Failure rolls back the entire unit. Stable idempotency and external event IDs coalesce duplicate
 delivery and concurrent replay.
 
-The outbox dispatcher uses a bounded batch, maximum attempt count, exponential backoff, and stable
-event identity. A failed callback leaves a retryable or terminally failed record; it never rewrites
-the risk decision. Authenticated WebSocket subscriptions are limited to calls authorized for the
-JWT membership and organization. Replay is cursor-bounded, and acknowledgement validates the same
-tenant/call/membership scope before recording delivery acknowledgement.
+The outbox dispatcher uses a bounded batch, maximum attempt count, exponential backoff, stable event
+identity, and an expiring database lease that fences concurrent workers. A crashed worker's claim is
+recoverable after lease expiry. A failed callback leaves a retryable or terminally failed record; it
+never rewrites the risk decision. Database checks enforce paired lease fields, pending-only leases,
+non-negative attempts, and delivered timestamps. Outbox rows are converted only when event type,
+schema, tenant/call, risk-event, intervention, and control-mode invariants agree.
+
+Authenticated WebSocket subscriptions are limited to calls authorized for the JWT membership and
+organization. Each subscribe, live publish, and acknowledgement revalidates the access session and
+call authorization; revocation disconnects the socket. The gateway rejects ambiguous or malformed
+bearer credentials, bounds authenticated connections and inbound requests, requires canonical event
+IDs/cursors, and isolates a failed socket write so it cannot block other subscribers. Replay is
+cursor-bounded, and acknowledgement validates the same tenant/call/membership scope plus a delivered
+or actively leased dispatch before recording delivery acknowledgement.
 
 ## Failure recovery
 

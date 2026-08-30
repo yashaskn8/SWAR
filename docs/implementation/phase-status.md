@@ -401,15 +401,19 @@ Phase R: LOCKED
   returns the same committed assessment/event identities.
 - API/delivery: PASS - `GET /api/v1/calls/{callId}/risk-assessments` keeps existing JWT, permission,
   tenant, pagination, and call-authorization boundaries. `/ws/security` authenticates every
-  connection, authorizes every subscribed call, replays only tenant/call-scoped delivered rows from
-  a bounded cursor, deduplicates stable event IDs, and accepts acknowledgement only for the same
-  organization, membership, subscribed call, and dispatched/delivered event. Delivery and demo
-  execution use bounded batch/attempt/backoff state and graceful shutdown flushes.
+  connection, rejects ambiguous credentials/excess connections, revalidates the active session and
+  call authorization before subscribe/publish/ack, replays only tenant/call-scoped delivered rows
+  from a bounded canonical cursor, deduplicates stable event IDs, isolates broken subscribers, and
+  accepts acknowledgement only for the same organization, membership, subscribed call, and
+  dispatched/delivered event. Delivery and demo execution use bounded batch/attempt/backoff state
+  and graceful shutdown flushes. Outbox dispatch uses an expiring PostgreSQL lease to fence
+  concurrent workers and recover abandoned claims; database and conversion invariants reject
+  malformed or cross-mode rows before publication.
 - Contracts and tests: PASS - generated REST and AsyncAPI snapshots plus strict risk/security-event
-  schemas pass 16/16 contract tests. The complete ordinary backend suite passes 87 active tests;
+  schemas pass 19/19 contract tests. The complete ordinary backend suite passes 92 active tests;
   17 native-only cases are skipped there and exercised by native harnesses. Prettier, ESLint, strict
   TypeScript, Prisma generation/validation, and Nest build pass.
-- Native/upstream regression: PASS - all four migrations apply on fresh native PostgreSQL 18;
+- Native/upstream regression: PASS - all five migrations apply on fresh native PostgreSQL 18;
   migration status/no-op replay, seed replay, and 13/13 database tests pass, including four matrix
   scenarios, out-of-order DEEP/FAST, atomic rollback, concurrent replay, durable replay/ack, and
   cross-tenant rejection. Native authentication/RBAC/tenant isolation passes 11/11. Complete ML

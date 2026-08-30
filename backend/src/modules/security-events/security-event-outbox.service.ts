@@ -42,6 +42,7 @@ export class SecurityEventOutboxService implements OnApplicationBootstrap, OnApp
       const records = await this.repository.claimDispatchable(
         api.securityOutboxBatchSize,
         api.securityOutboxMaximumAttempts,
+        api.securityOutboxLeaseMs,
       );
       this.telemetry.gauge('swar_backend_security_outbox_claimed_depth', records.length);
       for (const record of records) {
