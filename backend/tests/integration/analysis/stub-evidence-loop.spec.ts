@@ -17,6 +17,7 @@ import { CallRepository } from '../../../src/modules/calls/call.repository';
 import type { RecordEvidenceInput } from '../../../src/modules/evidence/evidence.repository';
 import { EvidenceRepository } from '../../../src/modules/evidence/evidence.repository';
 import { DependencyProbeService } from '../../../src/modules/health/dependency-probe.service';
+import { RiskDecisionService } from '../../../src/modules/risk/risk-decision.service';
 import { setValidTestEnvironment } from '../../test-environment';
 
 const ids = {
@@ -127,6 +128,15 @@ describe('Phase M authenticated headless stub evidence loop', () => {
       .useValue({ findAnalysisGrantContext })
       .overrideProvider(EvidenceRepository)
       .useValue({ record })
+      .overrideProvider(RiskDecisionService)
+      .useValue({
+        assessAcceptedEvidence: () =>
+          Promise.resolve({
+            assessmentStatus: 'SUPPRESSED',
+            productionEligible: false,
+            reasonCode: 'PHASE_M_TEST_BOUNDARY',
+          }),
+      })
       .overrideProvider(DependencyProbeService)
       .useValue({ probeMl: () => Promise.resolve(true), probeLiveKit: () => Promise.resolve(true) })
       .compile();

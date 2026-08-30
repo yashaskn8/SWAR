@@ -15,6 +15,10 @@ export interface AllowedAuditMetadata {
   operation?: string;
   policyVersion?: string;
   schemaVersion?: string;
+  decisionMode?: string;
+  evidenceMode?: string;
+  thresholdVersion?: string;
+  productionEligible?: boolean;
 }
 
 export interface AppendAuditInput {
@@ -95,6 +99,36 @@ export class AuditRepository {
                     160,
                   ),
                 }),
+            ...(metadata.decisionMode === undefined
+              ? {}
+              : {
+                  decisionMode: requireText(
+                    metadata.decisionMode,
+                    'auditMetadata.decisionMode',
+                    80,
+                  ),
+                }),
+            ...(metadata.evidenceMode === undefined
+              ? {}
+              : {
+                  evidenceMode: requireText(
+                    metadata.evidenceMode,
+                    'auditMetadata.evidenceMode',
+                    80,
+                  ),
+                }),
+            ...(metadata.thresholdVersion === undefined
+              ? {}
+              : {
+                  thresholdVersion: requireText(
+                    metadata.thresholdVersion,
+                    'auditMetadata.thresholdVersion',
+                    160,
+                  ),
+                }),
+            ...(metadata.productionEligible === undefined
+              ? {}
+              : { productionEligible: metadata.productionEligible }),
           };
     return client.auditLog.create({
       data: {

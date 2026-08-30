@@ -123,6 +123,59 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
         occurredAt: { type: 'string', format: 'date-time' },
       },
     },
+    RiskAssessment: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'riskAssessmentId',
+        'callId',
+        'outcome',
+        'effectiveState',
+        'decisionMode',
+        'evidenceMode',
+        'productionEligible',
+        'activationSuppressed',
+        'reasonCode',
+        'policyVersion',
+        'thresholdVersion',
+        'calibrationVersion',
+        'proposedInterventions',
+        'maxWindowSequence',
+        'occurredAt',
+      ],
+      properties: {
+        riskAssessmentId: { type: 'string', format: 'uuid' },
+        callId: { type: 'string', format: 'uuid' },
+        outcome: {
+          enum: ['VERIFIED', 'UNVERIFIED', 'HIGH_RISK', 'CRITICAL', 'INSUFFICIENT_EVIDENCE'],
+        },
+        effectiveState: { enum: ['VERIFIED', 'UNVERIFIED', 'HIGH_RISK', 'CRITICAL'] },
+        decisionMode: {
+          enum: ['ENGINEERING_TEST', 'SHADOW', 'CALIBRATED_BLOCKED', 'PRODUCTION_ELIGIBLE'],
+        },
+        evidenceMode: { enum: ['SIMULATED', 'SHADOW', 'CALIBRATED'] },
+        productionEligible: { type: 'boolean' },
+        activationSuppressed: { type: 'boolean' },
+        reasonCode: { type: 'string', maxLength: 80 },
+        policyVersion: { type: 'string', maxLength: 40 },
+        thresholdVersion: { type: 'string', maxLength: 80 },
+        calibrationVersion: { type: 'string', maxLength: 80, nullable: true },
+        proposedInterventions: {
+          type: 'array',
+          items: {
+            enum: [
+              'WARN',
+              'HOLD_PROTECTED_ACTION',
+              'REQUIRE_STEP_UP',
+              'REQUIRE_CALLBACK',
+              'END_CALL',
+            ],
+          },
+        },
+        maxWindowSequence: { type: 'string', pattern: '^\\d+$' },
+        occurredAt: { type: 'string', format: 'date-time' },
+      },
+    },
     ActiveCallsPage: {
       type: 'object',
       additionalProperties: false,
@@ -138,6 +191,15 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
       required: ['items', 'nextCursor'],
       properties: {
         items: { type: 'array', items: { $ref: '#/components/schemas/RiskEvent' } },
+        nextCursor: { type: 'string', nullable: true },
+      },
+    },
+    RiskAssessmentsPage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['items', 'nextCursor'],
+      properties: {
+        items: { type: 'array', items: { $ref: '#/components/schemas/RiskAssessment' } },
         nextCursor: { type: 'string', nullable: true },
       },
     },
@@ -187,11 +249,21 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     EvidenceAccepted: {
       type: 'object',
       additionalProperties: false,
-      required: ['evidenceEventId', 'eventId', 'acceptanceStatus'],
+      required: ['evidenceEventId', 'eventId', 'acceptanceStatus', 'riskAssessment'],
       properties: {
         evidenceEventId: { type: 'string', format: 'uuid' },
         eventId: { type: 'string', format: 'uuid' },
         acceptanceStatus: { enum: ['ACCEPTED', 'STALE'] },
+        riskAssessment: {
+          type: 'object',
+          additionalProperties: true,
+          required: ['assessmentStatus', 'productionEligible', 'reasonCode'],
+          properties: {
+            assessmentStatus: { enum: ['RECORDED', 'SUPPRESSED'] },
+            productionEligible: { type: 'boolean' },
+            reasonCode: { type: 'string', maxLength: 80 },
+          },
+        },
       },
     },
     RiskPolicy: {
@@ -249,6 +321,7 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Calls.end': 'Call',
     'Calls.active': 'ActiveCallsPage',
     'Calls.riskEvents': 'RiskEventsPage',
+    'Calls.riskAssessments': 'RiskAssessmentsPage',
     'TrustedSpeakers.create': 'TrustedSpeaker',
     'TrustedSpeakers.consent': 'Consent',
     'TrustedSpeakers.revoke': 'StatusResult',
@@ -268,6 +341,7 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Calls.end': ['call.end'],
     'Calls.active': ['call.read'],
     'Calls.riskEvents': ['risk-event.read'],
+    'Calls.riskAssessments': ['risk-event.read'],
     'TrustedSpeakers.create': ['enrollment.manage'],
     'TrustedSpeakers.consent': ['enrollment.manage'],
     'TrustedSpeakers.revoke': ['enrollment.manage'],
@@ -293,7 +367,12 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Interventions.complete',
     'Interventions.release',
   ]);
-  const queries = new Set(['Calls.active', 'Calls.riskEvents', 'RiskPolicy.active']);
+  const queries = new Set([
+    'Calls.active',
+    'Calls.riskEvents',
+    'Calls.riskAssessments',
+    'RiskPolicy.active',
+  ]);
   const idempotent = new Set([
     'Calls.create',
     'Calls.invite',
@@ -319,6 +398,7 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Calls.end': ['NOT_FOUND', 'CONFLICT', 'ILLEGAL_DOMAIN_TRANSITION', 'DOMAIN_PROVIDER_FAILED'],
     'Calls.active': ['PAGINATION_CURSOR_INVALID', 'DEPENDENCY_UNAVAILABLE'],
     'Calls.riskEvents': ['NOT_FOUND', 'PAGINATION_CURSOR_INVALID', 'DEPENDENCY_UNAVAILABLE'],
+    'Calls.riskAssessments': ['NOT_FOUND', 'PAGINATION_CURSOR_INVALID', 'DEPENDENCY_UNAVAILABLE'],
     'TrustedSpeakers.create': ['NOT_FOUND', 'CONFLICT', 'DEPENDENCY_UNAVAILABLE'],
     'TrustedSpeakers.consent': ['NOT_FOUND', 'CONFLICT', 'DEPENDENCY_UNAVAILABLE'],
     'TrustedSpeakers.revoke': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
@@ -337,7 +417,13 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
       'CONFLICT',
     ],
     'RiskPolicy.active': ['NOT_FOUND', 'DEPENDENCY_UNAVAILABLE'],
-    'RiskPolicy.put': ['NOT_FOUND', 'CONFLICT', 'DEPENDENCY_UNAVAILABLE'],
+    'RiskPolicy.put': [
+      'NOT_FOUND',
+      'CONFLICT',
+      'RISK_POLICY_INVALID',
+      'RISK_PRODUCTION_ACTIVATION_BLOCKED',
+      'DEPENDENCY_UNAVAILABLE',
+    ],
     'LiveKitWebhook.receive': [
       'WEBHOOK_AUTHENTICATION_FAILED',
       'WEBHOOK_EVENT_INVALID',

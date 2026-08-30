@@ -716,6 +716,84 @@
         ]
       }
     },
+    "/api/v1/calls/{callId}/risk-assessments": {
+      "get": {
+        "operationId": "Calls.riskAssessments",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAssessmentsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List tenant-scoped engineering/shadow risk assessments and activation status",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-event.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "PAGINATION_CURSOR_INVALID",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
     "/api/v1/trusted-speakers": {
       "post": {
         "operationId": "TrustedSpeakers.create",
@@ -1354,6 +1432,8 @@
           "INTERNAL_ERROR",
           "NOT_FOUND",
           "RATE_LIMITED",
+          "RISK_POLICY_INVALID",
+          "RISK_PRODUCTION_ACTIVATION_BLOCKED",
           "TOKEN_INVALID",
           "VALIDATION_FAILED"
         ]
@@ -2322,6 +2402,112 @@
           }
         }
       },
+      "RiskAssessment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "riskAssessmentId",
+          "callId",
+          "outcome",
+          "effectiveState",
+          "decisionMode",
+          "evidenceMode",
+          "productionEligible",
+          "activationSuppressed",
+          "reasonCode",
+          "policyVersion",
+          "thresholdVersion",
+          "calibrationVersion",
+          "proposedInterventions",
+          "maxWindowSequence",
+          "occurredAt"
+        ],
+        "properties": {
+          "riskAssessmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "callId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outcome": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "HIGH_RISK",
+              "CRITICAL",
+              "INSUFFICIENT_EVIDENCE"
+            ]
+          },
+          "effectiveState": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "HIGH_RISK",
+              "CRITICAL"
+            ]
+          },
+          "decisionMode": {
+            "enum": [
+              "ENGINEERING_TEST",
+              "SHADOW",
+              "CALIBRATED_BLOCKED",
+              "PRODUCTION_ELIGIBLE"
+            ]
+          },
+          "evidenceMode": {
+            "enum": [
+              "SIMULATED",
+              "SHADOW",
+              "CALIBRATED"
+            ]
+          },
+          "productionEligible": {
+            "type": "boolean"
+          },
+          "activationSuppressed": {
+            "type": "boolean"
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "policyVersion": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "thresholdVersion": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "calibrationVersion": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "proposedInterventions": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "WARN",
+                "HOLD_PROTECTED_ACTION",
+                "REQUIRE_STEP_UP",
+                "REQUIRE_CALLBACK",
+                "END_CALL"
+              ]
+            }
+          },
+          "maxWindowSequence": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ActiveCallsPage": {
         "type": "object",
         "additionalProperties": false,
@@ -2354,6 +2540,26 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RiskEvent"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RiskAssessmentsPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RiskAssessment"
             }
           },
           "nextCursor": {
@@ -2468,7 +2674,8 @@
         "required": [
           "evidenceEventId",
           "eventId",
-          "acceptanceStatus"
+          "acceptanceStatus",
+          "riskAssessment"
         ],
         "properties": {
           "evidenceEventId": {
@@ -2484,6 +2691,30 @@
               "ACCEPTED",
               "STALE"
             ]
+          },
+          "riskAssessment": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "assessmentStatus",
+              "productionEligible",
+              "reasonCode"
+            ],
+            "properties": {
+              "assessmentStatus": {
+                "enum": [
+                  "RECORDED",
+                  "SUPPRESSED"
+                ]
+              },
+              "productionEligible": {
+                "type": "boolean"
+              },
+              "reasonCode": {
+                "type": "string",
+                "maxLength": 80
+              }
+            }
           }
         }
       },

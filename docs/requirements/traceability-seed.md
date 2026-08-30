@@ -234,7 +234,7 @@ or frontend behavior.
 
 Concrete command outcomes are recorded in [Phase N exit-gate evidence](../implementation/phase-status.md#phase-n-exit-gate-evidence).
 
-## 13. Phase O evaluation/calibration framework evidence
+## 14. Phase O evaluation/calibration framework evidence
 
 Phase O has a complete fail-closed software framework, but scientific execution and promotion are
 blocked because no approved external governed data root or non-example frozen manifest exists.
@@ -248,3 +248,30 @@ blocked because no approved external governed data root or non-example frozen ma
 | Machine-readable blocked state with no thresholds/calibrators plus explicit scientific/promotion gate | [Blocked calibration package](../../ml/config/calibration.json), [evaluation report](../evaluation/model-evaluation-report.md), and [promotion gates](../evaluation/promotion-gates.md) | MLR-GOV-001..002, MLR-CAL-001; AC-A-002, AC-ML-003..010 |
 
 Concrete command outcomes and the exact blocker are recorded in [Phase O evidence](../implementation/phase-status.md#phase-o-blocked-gate-evidence).
+
+## 15. Phase P secure-serving engineering evidence
+
+Phase P implements authenticated, exact-media-bound serving in non-promoted engineering mode while
+Phase O remains scientifically blocked.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| Signed service authentication, replay defense, exact call/room/participant/track binding, and bounded control | [Phase P serving contract](../implementation/phase-p-secure-ml-serving.md), [`MlControlClient`](../../backend/src/integrations/ml/ml-control.client.ts), and [ML serving application](../../ml/app/) | FR-API-004..005, FR-CALL-003..006, NFR-SEC-001..003; AC-RISK-005 |
+| Evidence modes, production-readiness blocker, bounded queues/retries/timeouts, and cleanup | [Phase P secure-serving tests](../../ml/tests/test_phase_p_secure_serving.py) and [backend evidence contract tests](../../backend/tests/contract/service-auth-and-evidence.spec.ts) | FR-ID-003, FR-SPOOF-003, FR-QUAL-002..004, NFR-PRIV-002, NFR-REL-001..002 |
+| Tenant-owned persistence with no ML PostgreSQL access or retained call audio | [`EvidenceIngestionService`](../../backend/src/modules/evidence/evidence-ingestion.service.ts), [ML application](../../ml/app/), and [Phase P evidence](../implementation/phase-status.md#phase-p-engineering-evidence) | FR-AUD-001..003, NFR-PRIV-001..003, NFR-SEC-001; AC-SYS-004 |
+
+## 16. Phase Q engineering-only risk evidence
+
+Phase Q implements deterministic risk assessment and intervention intent for engineering/test/shadow
+evidence. Production transitions, actions, and publications remain fail-closed until Phase O and
+Phase P are genuinely promoted.
+
+| Evidence area | Implementation/documentation artifact | Requirement/acceptance coverage |
+|---|---|---|
+| Strict versioned policy, score target/direction, quality gating, 2x2 matrix, FAST/DEEP fusion, and hysteresis | [`risk-policy.ts`](../../backend/src/modules/risk/risk-policy.ts), [`risk-engine.ts`](../../backend/src/modules/risk/risk-engine.ts), and [risk policy schema](../contracts/schemas/risk-policy.v1.json) | FR-RISK-001..006, FR-ID-001..004, FR-SPOOF-001..004, FR-QUAL-001..004; AC-RISK-001..004, AC-RISK-008, AC-RISK-010 |
+| Evidence-set replay safety, deterministic late/revision handling, tenant/call/session/frozen-policy binding, and immutable provenance | [`RiskDecisionService`](../../backend/src/modules/risk/risk-decision.service.ts), [`RiskRepository`](../../backend/src/modules/risk/risk.repository.ts), and [Phase Q migration](../../backend/prisma/migrations/20260830010000_phase_q_engineering_risk_assessments/migration.sql) | FR-RISK-004..006, FR-AUD-001..003, NFR-SEC-001..003, NFR-REL-001..002; AC-RISK-005, AC-RISK-009 |
+| Explicit engineering/shadow/calibrated-blocked modes and independent production guards | [`RiskActivationGateService`](../../backend/src/modules/risk/risk-activation-gate.service.ts), [engineering policy fixture](../contracts/risk-policy.engineering-fixture.v1.json), and [Phase Q engineering contract](../implementation/phase-q-engineering-risk.md) | MLR-CAL-001, MLR-SAFE-001, NFR-SEC-001; AC-A-002, AC-RISK-003..004 |
+| Authenticated tenant-scoped assessment query; existing authenticated WebSocket isolation/replay remains unchanged and suppressed assessments are unpublished | [REST contract](../contracts/public-rest.openapi.yaml), [`CallsController`](../../backend/src/modules/calls/calls.controller.ts), and [WebSocket contract tests](../../backend/tests/contract/websocket-and-webhook.spec.ts) | FR-API-001..003, FR-DASH-001..002, NFR-SEC-001..002; AC-RISK-007 |
+| Four matrix scenarios, boundaries, quality abstention, revision/order/gap handling, duplicate/concurrent replay, promotion blocking, and native PostgreSQL constraints | [Phase Q risk tests](../../backend/tests/unit/risk/), [native repository tests](../../backend/tests/integration/database/repositories.e2e-spec.ts), and [platform gate tests](../../backend/tests/unit/platform/platform.spec.ts) | AC-RISK-001..010; NFR-REL-001..002, NFR-SEC-001..003 |
+
+Concrete command outcomes and blocked production criteria are recorded in [Phase Q evidence](../implementation/phase-status.md#phase-q-engineering-only-evidence).

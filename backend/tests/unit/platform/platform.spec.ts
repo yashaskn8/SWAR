@@ -80,6 +80,21 @@ describe('Phase H platform units', () => {
     ).not.toThrow();
   });
 
+  it('fails closed when production intervention mode is requested before O/P/Q promotion', () => {
+    expect(() =>
+      parseEnvironment(
+        validTestEnvironment({
+          RISK_INTERVENTION_MODE: 'PRODUCTION',
+          PHASE_O_SCIENTIFIC_STATUS: 'BLOCKED',
+          PHASE_P_PRODUCTION_STATUS: 'BLOCKED_BY_PHASE_O',
+          PHASE_Q_PRODUCTION_STATUS: 'ENGINEERING_ONLY',
+        }),
+      ),
+    ).toThrow(
+      /PHASE_O_SCIENTIFIC_STATUS|PHASE_P_PRODUCTION_STATUS|PHASE_Q_PRODUCTION_STATUS|RISK_INTERVENTION_MODE/u,
+    );
+  });
+
   it('prevents the backend configuration module from starting with an invalid environment', async () => {
     const invalid = validTestEnvironment({ JWT_ACCESS_SECRET: 'short-private-value' });
     await expect(

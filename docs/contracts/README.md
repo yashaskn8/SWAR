@@ -12,6 +12,9 @@ This directory contains SWAR's authoritative transport contracts:
   control; analysis create uses the exact-binding v2 schema while v1 remains historical.
 - [ML-to-backend OpenAPI](ml-evidence.openapi.yaml) defines authenticated, bound, idempotent evidence ingestion.
 - [JSON Schemas](schemas/) define shared error, security-event, ML-control, and evidence payloads.
+- [Risk policy schema](schemas/risk-policy.v1.json) defines the strict Phase Q policy document;
+  [the engineering fixture](risk-policy.engineering-fixture.v1.json) is explicitly uncalibrated and
+  cannot authorize production action.
 - [Versioning](versioning.md) defines compatibility, replay, optional-field, enum, and score semantics.
 
 The contracts use fictional labelled examples only. Public examples contain no audio, embedding, ciphertext, password, access token, refresh token, service credential, or private call content. Session and join-token response fields are marked sensitive/read-only because the client needs those short-lived credentials; they must never be logged or replay-cached.

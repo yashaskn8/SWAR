@@ -1,5 +1,9 @@
 export type SwarEnvironment = 'development' | 'test' | 'production';
 export type MlEvidenceMode = 'SIMULATED' | 'SHADOW' | 'CALIBRATED';
+export type RiskInterventionMode = 'ENGINEERING_ONLY' | 'PRODUCTION';
+export type PhaseOScientificStatus = 'BLOCKED' | 'PROMOTED';
+export type PhasePProductionStatus = 'BLOCKED_BY_PHASE_O' | 'PROMOTED';
+export type PhaseQProductionStatus = 'ENGINEERING_ONLY' | 'PROMOTED';
 
 export interface ApplicationConfiguration {
   runtime: {
@@ -41,6 +45,12 @@ export interface ApplicationConfiguration {
     webSocketTimeoutMs: number;
     liveKitParticipantGrantTtlSeconds: number;
     analysisSessionTtlSeconds: number;
+  };
+  risk: {
+    interventionMode: RiskInterventionMode;
+    phaseOScientificStatus: PhaseOScientificStatus;
+    phasePProductionStatus: PhasePProductionStatus;
+    phaseQProductionStatus: PhaseQProductionStatus;
   };
   secrets: {
     mlInternalSecret: string;
@@ -157,6 +167,15 @@ function parseEvidenceMode(reader: Reader): MlEvidenceMode {
   return value as MlEvidenceMode;
 }
 
+function parseEnum<T extends string>(reader: Reader, name: string, allowed: readonly T[]): T {
+  const value = reader.text(name, 40).toUpperCase();
+  if (!allowed.includes(value as T)) {
+    reader.invalid.push(name);
+    return allowed[0]!;
+  }
+  return value as T;
+}
+
 function parseCors(
   reader: Reader,
   source: NodeJS.ProcessEnv,
@@ -267,6 +286,24 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
       ),
       analysisSessionTtlSeconds: reader.integer('ANALYSIS_SESSION_TTL_SECONDS', 30, 3_600),
     },
+    risk: {
+      interventionMode: parseEnum(reader, 'RISK_INTERVENTION_MODE', [
+        'ENGINEERING_ONLY',
+        'PRODUCTION',
+      ] as const),
+      phaseOScientificStatus: parseEnum(reader, 'PHASE_O_SCIENTIFIC_STATUS', [
+        'BLOCKED',
+        'PROMOTED',
+      ] as const),
+      phasePProductionStatus: parseEnum(reader, 'PHASE_P_PRODUCTION_STATUS', [
+        'BLOCKED_BY_PHASE_O',
+        'PROMOTED',
+      ] as const),
+      phaseQProductionStatus: parseEnum(reader, 'PHASE_Q_PRODUCTION_STATUS', [
+        'ENGINEERING_ONLY',
+        'PROMOTED',
+      ] as const),
+    },
     secrets: {
       mlInternalSecret: reader.secret('ML_INTERNAL_SECRET'),
       verificationCallbackSecret: reader.secret('VERIFICATION_CALLBACK_SECRET'),
@@ -320,6 +357,25 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
     configuration.dependencies.mlEvidenceMode !== 'CALIBRATED'
   ) {
     reader.invalid.push('ML_EVIDENCE_MODE');
+  }
+  if (
+    configuration.risk.interventionMode === 'PRODUCTION' &&
+    (configuration.risk.phaseOScientificStatus !== 'PROMOTED' ||
+      configuration.risk.phasePProductionStatus !== 'PROMOTED' ||
+      configuration.risk.phaseQProductionStatus !== 'PROMOTED')
+  ) {
+    reader.invalid.push(
+      'RISK_INTERVENTION_MODE',
+      'PHASE_O_SCIENTIFIC_STATUS',
+      'PHASE_P_PRODUCTION_STATUS',
+      'PHASE_Q_PRODUCTION_STATUS',
+    );
+  }
+  if (
+    configuration.risk.phasePProductionStatus === 'PROMOTED' &&
+    configuration.risk.phaseOScientificStatus !== 'PROMOTED'
+  ) {
+    reader.invalid.push('PHASE_O_SCIENTIFIC_STATUS', 'PHASE_P_PRODUCTION_STATUS');
   }
   if (reader.invalid.length > 0) throw new EnvironmentValidationError(reader.invalid);
   return configuration;

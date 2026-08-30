@@ -35,6 +35,8 @@ Phase E defined this plan and validated the Prisma schema without creating a mig
 | `AnalysisSession` | `(organizationId, idempotencyKey)` | Analysis-create replay protection. |
 | `RiskPolicy` | `(organizationId, policyKey, version)` | Immutable tenant policy versions. |
 | `EvidenceEvent` | `(organizationId, idempotencyKey)`, `(organizationId, analysisSessionId, eventSequence)`, `(organizationId, analysisSessionId, windowSequence, evidenceType, revision)` | Transport replay, arrival order, and semantic revision identity. |
+| `RiskAssessment` | `(organizationId, idempotencyKey)`, `(organizationId, analysisSessionId, evidenceSetHashSha256)` | One deterministic assessment per accepted evidence set and replay-safe callback handling. |
+| `RiskAssessmentEvidence` | `(organizationId, riskAssessmentId, evidenceEventId)` | No duplicate assessment provenance links. |
 | `RiskEvent` | `(organizationId, idempotencyKey)`, `(organizationId, callId, eventSequence)` | Immutable replay-safe temporal decisions. |
 | `RiskEventEvidence` | `(organizationId, riskEventId, evidenceEventId)` | No duplicate provenance links. |
 | `Intervention`, `VerificationChallenge`, `Alert` | `(organizationId, idempotencyKey)` | Action/delivery replay safety. |
@@ -51,6 +53,7 @@ Phase E defined this plan and validated the Prisma schema without creating a mig
 | Model version references | `modelVersionId -> ModelVersion.id` | `RESTRICT` | Retire referenced models; never delete/rewrite provenance. |
 | Membership roles | `(organizationId, membershipId)` | `CASCADE` | Pure authorization join only; membership deletion is itself explicit/audited. |
 | Risk event evidence | `(organizationId, riskEventId)` | `CASCADE`; evidence FK `RESTRICT` | Pure provenance join; evidence remains protected from parent cleanup. |
+| Risk assessment evidence | `(organizationId, riskAssessmentId)` | `CASCADE`; evidence FK `RESTRICT` | Pure assessment provenance join; evidence remains protected from parent cleanup. |
 | Audit target | no polymorphic FK | application tenant check | `targetType`/`targetId` are validated against the actor tenant before append. |
 
 `Alert.interventionId`, `RiskEvent.analysisSessionId`, and other optional composite relations still include the non-null tenant key. Phase F integration tests must prove null optional IDs work and a non-null cross-tenant ID fails.
@@ -68,6 +71,7 @@ Phase E defined this plan and validated the Prisma schema without creating a mig
 | Policy lookup | `(organizationId, status, effectiveAt)` plus unique policy/version |
 | Evidence timeline | `(organizationId, callId, observedAt)` and `(organizationId, analysisSessionId, windowSequence, acceptanceStatus)` |
 | Risk timeline/dashboard | `(organizationId, callId, occurredAt)` and `(organizationId, state, occurredAt)` |
+| Engineering/shadow assessment timeline | `(organizationId, callId, occurredAt)` and `(organizationId, analysisSessionId, maxWindowSequence)` |
 | Active intervention/dashboard | `(organizationId, callId, status)` and `(organizationId, status, requiredAt)` |
 | Alert delivery | `(organizationId, status, nextAttemptAt)` and call/created time |
 | Audit lookup | organization/time, organization/target/time, organization/correlation |

@@ -61,6 +61,8 @@ const tenantModels = [
   'AnalysisSession',
   'RiskPolicy',
   'EvidenceEvent',
+  'RiskAssessment',
+  'RiskAssessmentEvidence',
   'RiskEvent',
   'RiskEventEvidence',
   'Intervention',

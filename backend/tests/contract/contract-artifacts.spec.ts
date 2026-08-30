@@ -201,4 +201,20 @@ describe('Phase J machine-readable contracts', () => {
     expect(schema).not.toContain('organizationId');
     expect(schema).not.toContain('SAFE');
   });
+
+  it('validates the explicitly uncalibrated engineering risk-policy fixture', async () => {
+    const schema = JSON.parse(
+      await readFile(resolve(contracts, 'schemas', 'risk-policy.v1.json'), 'utf8'),
+    ) as object;
+    const fixture = JSON.parse(
+      await readFile(resolve(contracts, 'risk-policy.engineering-fixture.v1.json'), 'utf8'),
+    ) as object;
+    const validate = new Ajv2020({ strict: false }).compile(schema);
+    expect(validate(fixture)).toBe(true);
+    expect(fixture).toMatchObject({
+      activationMode: 'ENGINEERING_ONLY',
+      thresholdClassification: 'ENGINEERING_FIXTURE_NOT_CALIBRATED',
+      calibrationVersion: null,
+    });
+  });
 });

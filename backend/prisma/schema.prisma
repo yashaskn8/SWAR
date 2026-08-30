@@ -160,6 +160,13 @@ enum ScoreDirection {
   NOT_APPLICABLE
 }
 
+enum ScoreTarget {
+  EXPECTED_SPEAKER
+  SPOOF
+  BONAFIDE
+  AUDIO_QUALITY
+}
+
 enum EvidenceAcceptanceStatus {
   ACCEPTED
   SUPERSEDED
@@ -179,6 +186,21 @@ enum RiskState {
   UNVERIFIED
   HIGH_RISK
   CRITICAL
+}
+
+enum RiskAssessmentOutcome {
+  VERIFIED
+  UNVERIFIED
+  HIGH_RISK
+  CRITICAL
+  INSUFFICIENT_EVIDENCE
+}
+
+enum RiskDecisionMode {
+  ENGINEERING_TEST
+  SHADOW
+  CALIBRATED_BLOCKED
+  PRODUCTION_ELIGIBLE
 }
 
 enum InterventionType {
@@ -235,26 +257,28 @@ model Organization {
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
-  memberships          OrganizationMembership[]
-  membershipRoles      OrganizationMembershipRole[]
-  devices              Device[]
-  refreshSessions      RefreshSession[]
-  trustedSpeakers      TrustedSpeaker[]
-  enrollmentConsents   EnrollmentConsent[]
-  voiceprints          Voiceprint[]
-  calls                Call[]
-  callParticipants     CallParticipant[]
-  mediaTracks          MediaTrack[]
-  trackBindings        TrackBinding[]
-  analysisSessions     AnalysisSession[]
-  riskPolicies         RiskPolicy[]
-  evidenceEvents       EvidenceEvent[]
-  riskEvents           RiskEvent[]
-  riskEventEvidence    RiskEventEvidence[]
-  interventions        Intervention[]
-  verificationAttempts VerificationChallenge[]
-  alerts               Alert[]
-  auditLogs            AuditLog[]
+  memberships            OrganizationMembership[]
+  membershipRoles        OrganizationMembershipRole[]
+  devices                Device[]
+  refreshSessions        RefreshSession[]
+  trustedSpeakers        TrustedSpeaker[]
+  enrollmentConsents     EnrollmentConsent[]
+  voiceprints            Voiceprint[]
+  calls                  Call[]
+  callParticipants       CallParticipant[]
+  mediaTracks            MediaTrack[]
+  trackBindings          TrackBinding[]
+  analysisSessions       AnalysisSession[]
+  riskPolicies           RiskPolicy[]
+  evidenceEvents         EvidenceEvent[]
+  riskEvents             RiskEvent[]
+  riskAssessments        RiskAssessment[]
+  riskAssessmentEvidence RiskAssessmentEvidence[]
+  riskEventEvidence      RiskEventEvidence[]
+  interventions          Intervention[]
+  verificationAttempts   VerificationChallenge[]
+  alerts                 Alert[]
+  auditLogs              AuditLog[]
 }
 
 model User {
@@ -456,6 +480,7 @@ model ModelVersion {
   inputChannelCount    Int
   scoreName            String               @db.VarChar(120)
   scoreDirection       ScoreDirection
+  scoreTarget          ScoreTarget?
   calibrationVersion   String?              @db.VarChar(80)
   status               ModelLifecycleStatus @default(REGISTERED)
   createdAt            DateTime             @default(now()) @db.Timestamptz(6)
@@ -496,6 +521,7 @@ model Call {
   analysisSessions       AnalysisSession[]
   evidenceEvents         EvidenceEvent[]
   riskEvents             RiskEvent[]
+  riskAssessments        RiskAssessment[]
   interventions          Intervention[]
   verificationAttempts   VerificationChallenge[]
   alerts                 Alert[]
@@ -612,12 +638,13 @@ model AnalysisSession {
   createdAt       DateTime              @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime              @updatedAt @db.Timestamptz(6)
 
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  call           Call            @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
-  trackBinding   TrackBinding    @relation(fields: [organizationId, callId, trackBindingId], references: [organizationId, callId, id], onDelete: Restrict)
-  voiceprint     Voiceprint?     @relation(fields: [organizationId, voiceprintId], references: [organizationId, id], onDelete: Restrict)
-  evidenceEvents EvidenceEvent[]
-  riskEvents     RiskEvent[]
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call            Call             @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  trackBinding    TrackBinding     @relation(fields: [organizationId, callId, trackBindingId], references: [organizationId, callId, id], onDelete: Restrict)
+  voiceprint      Voiceprint?      @relation(fields: [organizationId, voiceprintId], references: [organizationId, id], onDelete: Restrict)
+  evidenceEvents  EvidenceEvent[]
+  riskEvents      RiskEvent[]
+  riskAssessments RiskAssessment[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, callId, id])
@@ -639,10 +666,11 @@ model RiskPolicy {
   retiredAt             DateTime?        @db.Timestamptz(6)
   createdAt             DateTime         @default(now()) @db.Timestamptz(6)
 
-  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  createdBy    OrganizationMembership @relation("PolicyCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: Restrict)
-  calls        Call[]
-  riskEvents   RiskEvent[]
+  organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy       OrganizationMembership @relation("PolicyCreatedBy", fields: [organizationId, createdByMembershipId], references: [organizationId, id], onDelete: Restrict)
+  calls           Call[]
+  riskEvents      RiskEvent[]
+  riskAssessments RiskAssessment[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, policyKey, version])
@@ -685,14 +713,15 @@ model EvidenceEvent {
   errorCode            String?                  @db.VarChar(80)
   createdAt            DateTime                 @default(now()) @db.Timestamptz(6)
 
-  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  call            Call                @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
-  analysisSession AnalysisSession     @relation(fields: [organizationId, callId, analysisSessionId], references: [organizationId, callId, id], onDelete: Restrict)
-  trackBinding    TrackBinding        @relation(fields: [organizationId, callId, trackBindingId], references: [organizationId, callId, id], onDelete: Restrict)
-  modelVersionRef ModelVersion?       @relation(fields: [modelVersionId], references: [id], onDelete: Restrict)
-  supersedes      EvidenceEvent?      @relation("EvidenceRevision", fields: [organizationId, supersedesEvidenceId], references: [organizationId, id], onDelete: Restrict)
-  revisions       EvidenceEvent[]     @relation("EvidenceRevision")
-  riskEventLinks  RiskEventEvidence[]
+  organization        Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call                Call                     @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  analysisSession     AnalysisSession          @relation(fields: [organizationId, callId, analysisSessionId], references: [organizationId, callId, id], onDelete: Restrict)
+  trackBinding        TrackBinding             @relation(fields: [organizationId, callId, trackBindingId], references: [organizationId, callId, id], onDelete: Restrict)
+  modelVersionRef     ModelVersion?            @relation(fields: [modelVersionId], references: [id], onDelete: Restrict)
+  supersedes          EvidenceEvent?           @relation("EvidenceRevision", fields: [organizationId, supersedesEvidenceId], references: [organizationId, id], onDelete: Restrict)
+  revisions           EvidenceEvent[]          @relation("EvidenceRevision")
+  riskEventLinks      RiskEventEvidence[]
+  riskAssessmentLinks RiskAssessmentEvidence[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, idempotencyKey])
@@ -701,6 +730,62 @@ model EvidenceEvent {
   @@index([organizationId, callId, observedAt])
   @@index([organizationId, analysisSessionId, windowSequence, acceptanceStatus])
   @@index([modelVersionId, observedAt])
+}
+
+model RiskAssessment {
+  id                    String                @id @default(uuid(7)) @db.Uuid
+  organizationId        String                @db.Uuid
+  callId                String                @db.Uuid
+  analysisSessionId     String                @db.Uuid
+  riskPolicyId          String                @db.Uuid
+  idempotencyKey        String                @db.VarChar(128)
+  schemaVersion         String                @db.VarChar(40)
+  evidenceSetHashSha256 String                @db.Char(64)
+  evidenceMode          EvidenceMode
+  decisionMode          RiskDecisionMode
+  outcome               RiskAssessmentOutcome
+  priorState            RiskState
+  effectiveState        RiskState
+  transitioned          Boolean               @default(false)
+  productionEligible    Boolean               @default(false)
+  activationSuppressed  Boolean               @default(true)
+  reasonCode            String                @db.VarChar(80)
+  policyKey             String                @db.VarChar(80)
+  policyVersion         String                @db.VarChar(40)
+  thresholdVersion      String                @db.VarChar(80)
+  calibrationVersion    String?               @db.VarChar(80)
+  proposedInterventions InterventionType[]    @default([])
+  maxWindowSequence     BigInt
+  occurredAt            DateTime              @db.Timestamptz(6)
+  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
+
+  organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  call            Call                     @relation(fields: [organizationId, callId], references: [organizationId, id], onDelete: Restrict)
+  analysisSession AnalysisSession          @relation(fields: [organizationId, analysisSessionId], references: [organizationId, id], onDelete: Restrict)
+  riskPolicy      RiskPolicy               @relation(fields: [organizationId, riskPolicyId], references: [organizationId, id], onDelete: Restrict)
+  evidenceLinks   RiskAssessmentEvidence[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, analysisSessionId, evidenceSetHashSha256])
+  @@index([organizationId, callId, occurredAt])
+  @@index([organizationId, analysisSessionId, maxWindowSequence])
+}
+
+model RiskAssessmentEvidence {
+  id               String   @id @default(uuid(7)) @db.Uuid
+  organizationId   String   @db.Uuid
+  riskAssessmentId String   @db.Uuid
+  evidenceEventId  String   @db.Uuid
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  riskAssessment RiskAssessment @relation(fields: [organizationId, riskAssessmentId], references: [organizationId, id], onDelete: Cascade)
+  evidenceEvent  EvidenceEvent  @relation(fields: [organizationId, evidenceEventId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, riskAssessmentId, evidenceEventId])
+  @@index([organizationId, evidenceEventId])
 }
 
 model RiskEvent {

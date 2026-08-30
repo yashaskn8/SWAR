@@ -8,6 +8,7 @@ import {
   type Prisma,
   type RiskPolicy,
   type ScoreDirection,
+  type ScoreTarget,
 } from '../../generated/prisma/client';
 import { TenantResourceNotFoundError } from '../../database/database.errors';
 import {
@@ -30,6 +31,7 @@ export interface RegisterModelVersionInput {
   inputChannelCount: number;
   scoreName: string;
   scoreDirection: ScoreDirection;
+  scoreTarget: ScoreTarget;
   calibrationVersion?: string;
   status?: ModelLifecycleStatus;
 }
@@ -65,6 +67,7 @@ export class GovernanceRepository {
         inputChannelCount: input.inputChannelCount,
         scoreName: requireText(input.scoreName, 'scoreName', 120),
         scoreDirection: input.scoreDirection,
+        scoreTarget: input.scoreTarget,
         calibrationVersion:
           input.calibrationVersion === undefined
             ? null

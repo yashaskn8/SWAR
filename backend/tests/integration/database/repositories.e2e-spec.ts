@@ -7,13 +7,12 @@ import {
   TenantResourceNotFoundError,
 } from '../../../src/database/database.errors';
 import { PrismaService } from '../../../src/database/prisma.service';
+import { ConfigurationService } from '../../../src/config/configuration';
 import { TransactionService } from '../../../src/database/transaction.service';
 import {
-  AlertChannel,
   EvidenceMode,
   EvidenceReadiness,
   EvidenceType,
-  InterventionStatus,
   InterventionType,
   MembershipStatus,
   ModelCapability,
@@ -21,7 +20,10 @@ import {
   OrganizationRole,
   ParticipantRole,
   RiskState,
+  RiskAssessmentOutcome,
+  RiskDecisionMode,
   ScoreDirection,
+  ScoreTarget,
   type RiskPolicy,
 } from '../../../src/generated/prisma/client';
 import { AuditRepository } from '../../../src/modules/audit/audit.repository';
@@ -32,6 +34,7 @@ import type { RecordEvidenceInput } from '../../../src/modules/evidence/evidence
 import { GovernanceRepository } from '../../../src/modules/governance/governance.repository';
 import { IdentityRepository } from '../../../src/modules/identity/identity.repository';
 import { RiskRepository } from '../../../src/modules/risk/risk.repository';
+import { validTestEnvironment } from '../../test-environment';
 
 const databaseEnabled = process.env.SWAR_RUN_DATABASE_TESTS === 'true';
 
@@ -44,7 +47,12 @@ describe.skipIf(!databaseEnabled)('Phase F tenant repositories', () => {
   const enrollment = new EnrollmentRepository(prisma, transactions);
   const calls = new CallRepository(prisma, transactions);
   const evidence = new EvidenceRepository(prisma);
-  const risk = new RiskRepository(prisma, transactions, audit);
+  const risk = new RiskRepository(
+    prisma,
+    transactions,
+    audit,
+    new ConfigurationService(validTestEnvironment()),
+  );
 
   beforeAll(async () => prisma.onModuleInit());
   afterAll(async () => prisma.onModuleDestroy());
@@ -110,6 +118,7 @@ describe.skipIf(!databaseEnabled)('Phase F tenant repositories', () => {
       inputChannelCount: 1,
       scoreName: 'not-applicable',
       scoreDirection: ScoreDirection.NOT_APPLICABLE,
+      scoreTarget: ScoreTarget.AUDIO_QUALITY,
       status: ModelLifecycleStatus.REJECTED,
     });
     const speaker = await enrollment.createTrustedSpeaker(context, {
@@ -199,71 +208,99 @@ describe.skipIf(!databaseEnabled)('Phase F tenant repositories', () => {
       evidence.record(context, { ...evidenceInput, eventSequence: 3n }),
     ).rejects.toBeInstanceOf(IdempotencyConflictError);
 
-    const transition = await risk.recordTransition(context, {
+    const assessmentIdempotencyKey = `risk-assessment-${randomUUID()}`;
+    const assessmentOccurredAt = new Date();
+    const assessmentInput = {
       callId: call.id,
       analysisSessionId: bound.analysisSession.id,
       riskPolicyId: fixture.policy.id,
-      idempotencyKey: `risk-${randomUUID()}`,
-      schemaVersion: 'test-v1',
-      eventSequence: 1n,
+      idempotencyKey: assessmentIdempotencyKey,
+      schemaVersion: '1.0.0',
+      evidenceSetHashSha256: 'a'.repeat(64),
+      evidenceMode: EvidenceMode.SHADOW,
+      decisionMode: RiskDecisionMode.SHADOW,
+      outcome: RiskAssessmentOutcome.HIGH_RISK,
       priorState: RiskState.UNVERIFIED,
-      state: RiskState.HIGH_RISK,
-      transitionReasonCode: 'TEST_ORCHESTRATION_ONLY',
+      effectiveState: RiskState.HIGH_RISK,
+      transitioned: true,
+      productionEligible: false,
+      activationSuppressed: true,
+      reasonCode: 'PHASE_O_SCIENTIFIC_CALIBRATION_BLOCKED',
       policyKey: fixture.policy.policyKey,
       policyVersion: fixture.policy.version,
-      thresholdVersion: 'none-test-fixture',
-      occurredAt: new Date(),
+      thresholdVersion: 'engineering-fixture-not-calibrated',
+      proposedInterventions: [InterventionType.WARN],
+      maxWindowSequence: 1n,
+      occurredAt: assessmentOccurredAt,
       evidenceEventIds: [recordedEvidence.id],
-      interventions: [
-        {
-          idempotencyKey: `intervention-${randomUUID()}`,
-          type: InterventionType.WARN,
-          policyVersion: fixture.policy.version,
-          reasonCode: 'TEST_ORCHESTRATION_ONLY',
-        },
-      ],
-      alerts: [
-        {
-          idempotencyKey: `alert-${randomUUID()}`,
-          channel: AlertChannel.AUDIT_QUEUE,
-          eventType: 'test.risk-event.created',
-          schemaVersion: 'test-v1',
-          interventionIndex: 0,
-        },
-      ],
       audit: {
-        actorMembershipId: fixture.membershipId,
         correlationId: `correlation-${randomUUID()}`,
         idempotencyKey: `audit-${randomUUID()}`,
       },
-    });
-    const intervention = transition.interventions[0]!;
-    await risk.createVerificationChallenge(context, {
-      callId: call.id,
-      interventionId: intervention.id,
-      performedByMembershipId: fixture.membershipId,
-      idempotencyKey: `verification-${randomUUID()}`,
-      method: 'TEST_ONLY',
-      attemptNumber: 1,
-      expiresAt: new Date(Date.now() + 60_000),
-    });
-    await risk.markAlertDelivered(context, transition.alerts[0]!.id);
-    const competingUpdates = await Promise.allSettled([
-      risk.updateInterventionStatus(context, {
-        interventionId: intervention.id,
-        expectedStatus: InterventionStatus.REQUIRED,
-        nextStatus: InterventionStatus.CANCELLED,
-        resolvedByMembershipId: fixture.membershipId,
-      }),
-      risk.updateInterventionStatus(context, {
-        interventionId: intervention.id,
-        expectedStatus: InterventionStatus.REQUIRED,
-        nextStatus: InterventionStatus.CANCELLED,
-        resolvedByMembershipId: fixture.membershipId,
-      }),
+    };
+    const [assessment, assessmentReplay] = await Promise.all([
+      risk.recordAssessment(context, assessmentInput),
+      risk.recordAssessment(context, assessmentInput),
     ]);
-    expect(competingUpdates.filter(({ status }) => status === 'fulfilled')).toHaveLength(1);
-    expect(competingUpdates.filter(({ status }) => status === 'rejected')).toHaveLength(1);
+    expect(assessmentReplay.id).toBe(assessment.id);
+    expect(assessment.productionEligible).toBe(false);
+    expect(assessment.activationSuppressed).toBe(true);
+    await expect(
+      risk.recordAssessment(context, {
+        ...assessmentInput,
+        outcome: RiskAssessmentOutcome.CRITICAL,
+      }),
+    ).rejects.toBeInstanceOf(IdempotencyConflictError);
+    const substitutedPolicy = await governance.createRiskPolicy(context, {
+      policyKey: 'substituted-test-policy',
+      version: 'substituted-v1',
+      schemaVersion: 'test-v1',
+      policyDocument: { fixture: true, productionEligible: false },
+      createdByMembershipId: fixture.membershipId,
+    });
+    await expect(
+      risk.recordAssessment(context, {
+        ...assessmentInput,
+        riskPolicyId: substitutedPolicy.id,
+        idempotencyKey: `risk-assessment-substituted-policy-${randomUUID()}`,
+        evidenceSetHashSha256: 'b'.repeat(64),
+        policyKey: substitutedPolicy.policyKey,
+        policyVersion: substitutedPolicy.version,
+      }),
+    ).rejects.toBeInstanceOf(TenantResourceNotFoundError);
+    await expect(
+      risk.recordAssessment(context, {
+        ...assessmentInput,
+        idempotencyKey: `risk-assessment-substituted-mode-${randomUUID()}`,
+        evidenceSetHashSha256: 'c'.repeat(64),
+        evidenceMode: EvidenceMode.SIMULATED,
+        decisionMode: RiskDecisionMode.ENGINEERING_TEST,
+      }),
+    ).rejects.toBeInstanceOf(TenantResourceNotFoundError);
+    await expect(
+      risk.recordTransition(context, {
+        callId: call.id,
+        analysisSessionId: bound.analysisSession.id,
+        riskPolicyId: fixture.policy.id,
+        idempotencyKey: `blocked-risk-${randomUUID()}`,
+        schemaVersion: '1.0.0',
+        eventSequence: 1n,
+        priorState: RiskState.UNVERIFIED,
+        state: RiskState.HIGH_RISK,
+        transitionReasonCode: 'TEST_FIXTURE_MUST_BE_BLOCKED',
+        policyKey: fixture.policy.policyKey,
+        policyVersion: fixture.policy.version,
+        thresholdVersion: 'engineering-fixture-not-calibrated',
+        occurredAt: new Date(),
+        evidenceEventIds: [recordedEvidence.id],
+        interventions: [],
+        alerts: [],
+        audit: {
+          correlationId: `correlation-${randomUUID()}`,
+          idempotencyKey: `audit-${randomUUID()}`,
+        },
+      }),
+    ).rejects.toThrow(/Production risk activation/iu);
     await calls.endCall(context, call.id);
     await identity.revokeRefreshSession(context, refreshSession.id);
     const deletedVoiceprint = await enrollment.revokeConsentAndDeleteVoiceprint(context, {
@@ -289,6 +326,10 @@ describe.skipIf(!databaseEnabled)('Phase F tenant repositories', () => {
       prisma.client.analysisSession.count({ where: { organizationId: fixture.organizationId } }),
       prisma.client.riskPolicy.count({ where: { organizationId: fixture.organizationId } }),
       prisma.client.evidenceEvent.count({ where: { organizationId: fixture.organizationId } }),
+      prisma.client.riskAssessment.count({ where: { organizationId: fixture.organizationId } }),
+      prisma.client.riskAssessmentEvidence.count({
+        where: { organizationId: fixture.organizationId },
+      }),
       prisma.client.riskEvent.count({ where: { organizationId: fixture.organizationId } }),
       prisma.client.riskEventEvidence.count({ where: { organizationId: fixture.organizationId } }),
       prisma.client.intervention.count({ where: { organizationId: fixture.organizationId } }),
@@ -298,7 +339,9 @@ describe.skipIf(!databaseEnabled)('Phase F tenant repositories', () => {
       prisma.client.alert.count({ where: { organizationId: fixture.organizationId } }),
       prisma.client.auditLog.count({ where: { organizationId: fixture.organizationId } }),
     ]);
-    expect(counts.every((count) => count >= 1)).toBe(true);
+    expect(counts.slice(0, 15).every((count) => count >= 1)).toBe(true);
+    expect(counts.slice(15, 20)).toEqual([0, 0, 0, 0, 0]);
+    expect(counts.at(-1)).toBeGreaterThanOrEqual(1);
   }, 30_000);
 
   test('blocks cross-tenant reads and composite foreign-key writes', async () => {

@@ -112,6 +112,14 @@ Organization-scoped immutable policy version. `policyDocument` holds validated p
 
 Immutable FAST, DEEP, identity, quality, insufficient-evidence, or pipeline-error fact. Tenant/idempotency and window/type/revision uniqueness make retries deterministic. `eventSequence` orders accepted arrivals; `windowSequence` and `revision` order analysis semantics. A later DEEP or corrected event links through `supersedesEvidenceId`; stale or duplicate events remain classified and cannot silently rewrite history.
 
+### RiskAssessment
+
+Immutable engineering, shadow, calibrated-blocked, or production-eligible evaluation of a deterministic accepted evidence set. It records the four matrix outcomes or internal `INSUFFICIENT_EVIDENCE`, effective temporal state, evidence/policy/calibration trace, proposed interventions, and the explicit production-eligibility/suppression result. A suppressed assessment is not a production risk transition and cannot create an intervention or security event.
+
+### RiskAssessmentEvidence
+
+Tenant-scoped join proving the exact evidence set used by an immutable assessment. It permits replay and out-of-order determinism checks without copying raw scores into the assessment.
+
 ### RiskEvent
 
 Immutable transition created only by the backend risk engine. It links the accepted evidence through `RiskEventEvidence`, stores prior/current approved states, and snapshots policy/threshold/schema versions. It never treats insufficient audio as `CRITICAL` by itself.

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swar.local/contracts/risk-policy.v1.json",
+  "title": "SWAR risk policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "activationMode",
+    "thresholdClassification",
+    "thresholdVersion",
+    "calibrationVersion",
+    "quality",
+    "thresholds",
+    "fusion",
+    "hysteresis",
+    "interventions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "activationMode": { "enum": ["ENGINEERING_ONLY", "PRODUCTION"] },
+    "thresholdClassification": {
+      "enum": ["ENGINEERING_FIXTURE_NOT_CALIBRATED", "PROMOTED_CALIBRATION"]
+    },
+    "thresholdVersion": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "calibrationVersion": {
+      "oneOf": [
+        { "type": "string", "minLength": 1, "maxLength": 80 },
+        { "type": "null" }
+      ]
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumScore", "minimumSpeechDurationMs", "rejectingReasonCodes"],
+      "properties": {
+        "minimumScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "minimumSpeechDurationMs": { "type": "integer", "minimum": 0, "maximum": 300000 },
+        "rejectingReasonCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "maxLength": 80 }
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identityEnter", "identityClear", "spoofEnter", "spoofClear"],
+      "properties": {
+        "identityEnter": { "type": "number", "minimum": 0, "maximum": 1 },
+        "identityClear": { "type": "number", "minimum": 0, "maximum": 1 },
+        "spoofEnter": { "type": "number", "minimum": 0, "maximum": 1 },
+        "spoofClear": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "fusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fastWeight", "deepWeight"],
+      "properties": {
+        "fastWeight": { "type": "number", "minimum": 0, "maximum": 1 },
+        "deepWeight": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "hysteresis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entryConsecutiveWindows", "clearConsecutiveWindows", "maximumWindowGap"],
+      "properties": {
+        "entryConsecutiveWindows": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "clearConsecutiveWindows": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maximumWindowGap": { "type": "integer", "minimum": 0, "maximum": 10000 }
+      }
+    },
+    "interventions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["highRisk", "critical"],
+      "properties": {
+        "highRisk": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/intervention" }
+        },
+        "critical": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/intervention" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "intervention": {
+      "enum": [
+        "WARN",
+        "HOLD_PROTECTED_ACTION",
+        "REQUIRE_STEP_UP",
+        "REQUIRE_CALLBACK",
+        "END_CALL"
+      ]
+    }
+  }
+}

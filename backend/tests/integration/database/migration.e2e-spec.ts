@@ -21,6 +21,8 @@ const expectedTables = [
   'RefreshSession',
   'RiskEvent',
   'RiskEventEvidence',
+  'RiskAssessment',
+  'RiskAssessmentEvidence',
   'RiskPolicy',
   'TrackBinding',
   'TrustedSpeaker',
@@ -67,6 +69,7 @@ describe.skipIf(!databaseEnabled)('Phase F migration and seed contract', () => {
       expect.arrayContaining([
         'EvidenceEvent_readiness_check',
         'RiskEvent_transition_check',
+        'RiskAssessment_integrity_check',
         'Voiceprint_sensitive_material_check',
       ]),
     );
@@ -102,6 +105,8 @@ describe.skipIf(!databaseEnabled)('Phase F migration and seed contract', () => {
       prisma.client.trackBinding.count(),
       prisma.client.analysisSession.count(),
       prisma.client.evidenceEvent.count(),
+      prisma.client.riskAssessment.count(),
+      prisma.client.riskAssessmentEvidence.count(),
       prisma.client.riskEvent.count(),
       prisma.client.riskEventEvidence.count(),
       prisma.client.intervention.count(),

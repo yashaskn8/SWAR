@@ -25,7 +25,7 @@ Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED 
 | N | Real model integration | K, L, M | COMPLETE | Three hash-verified licensed ECAPA/RawNet2/AASIST adapters; versioned score semantics and lifecycle; deterministic non-human CPU compatibility experiment; 89/89 ML tests including real checkpoint smoke plus all Phase N static/documentation/boundary/security checks passed on 2026-08-29. |
 | O | Evaluation/calibration | K, L, N | BLOCKED | Fail-closed evaluation/calibration framework and 18/18 focused tests pass; no approved external governed data root, non-example frozen manifest, data-steward approval, measured score records, or target-hardware profile exists, so no metric/threshold/calibration/promotion is claimed and P remains locked. |
 | P | ML serving/media subscriber | H, J, L, N, O | IMPLEMENTED_NOT_PROMOTED | Authenticated exact-binding NestJS/FastAPI control, restricted LiveKit subscriber, bounded queues/retries/timeouts, idempotent evidence delivery, evidence modes, fail-closed production readiness, graceful cleanup, migration/contracts, and Phase P security/failure tests are implemented. Scientific promotion remains blocked by Phase O. |
-| Q | Risk engine/interventions | F, G, I, J, O, P | NOT_STARTED | - |
+| Q | Risk engine/interventions | F, G, I, J, O, P | IMPLEMENTED_NOT_PROMOTED | Engineering/test/shadow matrix, quality gating, FAST/DEEP recomputation, hysteresis, immutable assessment/audit provenance, tenant API, and fail-closed O/P/Q production guards are implemented. Production transitions/interventions/events remain blocked. |
 | R | Frontend foundation | Q backend-completion PASS; J contracts | NOT_STARTED | - |
 | S | Frontend workflows | J, Q, R | NOT_STARTED | - |
 | T | End-to-end integration | D, P, Q, S | NOT_STARTED | - |
@@ -43,14 +43,17 @@ implemented and tested, but scientific execution remains `BLOCKED` until an appr
 governed data root, non-example frozen manifest, data-steward approval, measured exact-version score
 records, and named target-hardware profile satisfy its gate. No threshold, calibrator, probability,
 metric result, latency target, or model profile is promoted. The user explicitly authorized Phase P
-engineering with fixture/shadow evidence despite that scientific blocker; Phase P is implemented but
-cannot be production-promoted or marked complete. Phase Q remains `NOT_STARTED` and locked.
+engineering and then engineering-only Phase Q with fixture/shadow evidence despite that scientific
+blocker. Phase P and Phase Q are implemented but cannot be production-promoted or marked complete.
+Phase R remains locked.
 
 ```text
 Phase O scientific calibration: BLOCKED
 Phase P engineering: IMPLEMENTED_NOT_PROMOTED
 Phase P production activation: BLOCKED_BY_PHASE_O
-Phase Q: NOT_STARTED
+Phase Q engineering: IMPLEMENTED_NOT_PROMOTED
+Phase Q production activation: BLOCKED_BY_PHASE_O_AND_PHASE_P
+Phase R: LOCKED
 ```
 
 ## Phase A exit-gate evidence
@@ -305,8 +308,9 @@ Phase Q: NOT_STARTED
   coverage; named target-hardware cold/warm latency, queue, memory and concurrency distributions;
   authorized operating-point and promotion decision. All remain `VALIDATION REQUIRED`.
 - Gate verdict: `BLOCKED`, not `COMPLETE`. Phase P's scientific/production dependency is not
-  unlocked; the user authorized only the engineering implementation described below. Phase Q is
-  not started, and the Phase R backend-completion gate remains locked.
+  unlocked; the user authorized only the Phase P and Phase Q engineering implementations described
+  below. Neither exception promotes the scientific chain, and the Phase R backend-completion gate
+  remains locked.
 
 ## Phase P engineering evidence
 
@@ -361,4 +365,59 @@ Phase Q: NOT_STARTED
   `deepmerge-ts@7.1.5`. The offered command is a breaking forced Prisma 6 downgrade, so it was not
   applied or misreported as a pass.
 - Gate verdict: `IMPLEMENTED_NOT_PROMOTED`. Production activation is `BLOCKED_BY_PHASE_O`; Phase Q
-  is `NOT_STARTED`, not unlocked, and the Phase R backend-completion gate remains locked.
+  engineering was subsequently authorized without promoting Phase P, and the Phase R
+  backend-completion gate remains locked.
+
+## Phase Q engineering-only evidence
+
+- Dependency decision: `IMPLEMENTED_NOT_PROMOTED` - Phase F/G/I/J remain complete, Phase O remains
+  scientifically `BLOCKED`, and Phase P remains `IMPLEMENTED_NOT_PROMOTED / BLOCKED_BY_PHASE_O`.
+  The user explicitly authorized Phase Q engineering/test/shadow work without weakening those
+  dependencies. This exception does not unlock Phase R.
+- Deterministic assessment: PASS for engineering - strict versioned policy parsing, explicit score
+  target/direction normalization, audio-quality and speech-duration abstention, the four approved
+  matrix states, FAST/DEEP same-window fusion, entry/clear hysteresis, gap reset, newest-revision
+  selection, missing evidence, late/stale input suppression, and out-of-order recomputation are
+  implemented. Fixture numbers remain labelled `ENGINEERING_FIXTURE_NOT_CALIBRATED`.
+- Production suppression: PASS - `SIMULATED`, `SHADOW`, calibrated-looking evidence while blocked,
+  insufficient evidence, inactive/untraceable models, missing calibrated scores, and calibration
+  mismatch cannot become production eligible. Startup, policy creation, decision activation, the
+  database integrity check, and the existing transition repository each fail closed independently.
+  The engineering decision service creates no `RiskEvent`, `Intervention`, `Alert`, warning, hold,
+  escalation, call action, or WebSocket security publication.
+- Persistence/API: PASS - the new migration adds nullable model `ScoreTarget`, immutable
+  tenant-scoped `RiskAssessment`/`RiskAssessmentEvidence`, uniqueness and composite tenant foreign
+  keys, and a production-eligibility constraint. Assessment creation binds the call/session,
+  call-frozen policy, evidence mode, accepted evidence IDs, model/checkpoint/score provenance,
+  threshold/calibration version, and non-sensitive reason. Concurrent equivalent replay coalesces;
+  conflicting reuse, substituted policy/mode, cross-tenant resources, or cross-call sessions fail.
+  `GET /api/v1/calls/{callId}/risk-assessments` uses existing JWT, permission, tenant, pagination,
+  and call-authorization boundaries.
+- Contracts and tests: PASS - the generated REST snapshot and strict risk-policy schema/fixture pass
+  15/15 contract tests. Focused Phase Q plus platform-gate tests pass 27/27. The complete ordinary
+  backend suite passes 81 active tests with 14 native-only tests skipped; Prettier, ESLint, strict
+  TypeScript, Prisma generation/validation, and Nest build pass.
+- Native/upstream regression: PASS - all three migrations apply on fresh native PostgreSQL 18;
+  migration status/no-op replay, seed replay, and 10/10 database tests pass, and the server stops.
+  Native authentication/RBAC/tenant-isolation passes 11/11. Phase P ML serving/readiness regression
+  passes 12/12; Ruff lint/format covers 37 files and `pip check` reports no broken requirements.
+- Documentation/boundaries/security: PASS - documentation headings/links pass for 57 Markdown
+  files; repository and negative container/cross-layer checks pass; `git diff --check` passes; and
+  changed-file secret signatures/sensitive artifact extensions pass for 40 files. No frontend,
+  Docker/Testcontainers artifact, raw audio, embedding, token, private content, checkpoint, or
+  external production integration was added.
+- Dependency audit: `VALIDATION REQUIRED` - `npm audit --omit=dev --audit-level=high` still reports
+  the inherited three high-severity GHSA-ggr8-5vv4-36mx instances through Prisma 7.10.0's
+  `deepmerge-ts@7.1.5`. The offered repair is a breaking forced Prisma 6 downgrade and was not
+  applied or misreported as a pass.
+- Acceptance verdict: engineering/test/shadow risk state, API, audit/provenance, fixture intent, and
+  fail-closed gates are `IMPLEMENTED_NOT_PROMOTED`. Production `RiskEvent` transitions,
+  transactional warning/hold/step-up creation, external action activation, and live calibrated
+  WebSocket publication are specifically `BLOCKED_BY_PHASE_O_AND_PHASE_P`.
+- Remaining promotion work: complete governed Phase O evaluation and calibration with approved data
+  and measured results; authorize a promoted operating point/calibration artifact; promote Phase P
+  serving; review and promote the Phase Q policy; enable the explicit production configuration;
+  then wire and verify production transitions/actions/publication, outage recovery, concurrency,
+  and intervention audit behavior against genuinely eligible evidence.
+- Gate verdict: `IMPLEMENTED_NOT_PROMOTED`. Phase O remains scientifically `BLOCKED`; Phase P remains
+  not promoted; Phase Q production activation remains disabled; Phase R remains `LOCKED`.

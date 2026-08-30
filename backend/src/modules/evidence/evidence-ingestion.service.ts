@@ -11,6 +11,7 @@ import {
 } from '../../generated/prisma/client';
 import { ApiError } from '../../common/errors/api-error';
 import { CallRepository } from '../calls/call.repository';
+import { RiskDecisionService } from '../risk/risk-decision.service';
 import { MlEvidenceDto, MlEvidenceEventType } from './evidence.contracts';
 import { EvidenceRepository } from './evidence.repository';
 
@@ -99,6 +100,7 @@ export class EvidenceIngestionService {
   constructor(
     private readonly calls: CallRepository,
     private readonly evidence: EvidenceRepository,
+    private readonly riskDecision: RiskDecisionService,
   ) {}
 
   async ingest(input: MlEvidenceDto) {
@@ -167,10 +169,23 @@ export class EvidenceIngestionService {
         : { calibrationVersion: input.calibrationVersion }),
       ...(input.errorCode === undefined ? {} : { errorCode: input.errorCode }),
     });
+    const riskAssessment =
+      event.acceptanceStatus === EvidenceAcceptanceStatus.ACCEPTED
+        ? await this.riskDecision.assessAcceptedEvidence({
+            organizationId: input.organizationId,
+            analysisSessionId: input.analysisSessionId,
+            triggerEvidenceEventId: event.id,
+          })
+        : {
+            assessmentStatus: 'SUPPRESSED' as const,
+            productionEligible: false,
+            reasonCode: 'EVIDENCE_NOT_ACCEPTED_FOR_RISK',
+          };
     return {
       evidenceEventId: event.id,
       eventId: input.eventId,
       acceptanceStatus: event.acceptanceStatus,
+      riskAssessment,
     };
   }
 }

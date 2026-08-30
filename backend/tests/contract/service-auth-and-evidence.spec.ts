@@ -14,6 +14,7 @@ import type { CallRepository } from '../../src/modules/calls/call.repository';
 import { EvidenceIngestionService } from '../../src/modules/evidence/evidence-ingestion.service';
 import { MlEvidenceEventType } from '../../src/modules/evidence/evidence.contracts';
 import type { EvidenceRepository } from '../../src/modules/evidence/evidence.repository';
+import type { RiskDecisionService } from '../../src/modules/risk/risk-decision.service';
 import { setValidTestEnvironment } from '../test-environment';
 
 describe('Phase J service authentication and evidence binding', () => {
@@ -54,6 +55,7 @@ describe('Phase J service authentication and evidence binding', () => {
     const service = new EvidenceIngestionService(
       { findAnalysisGrantContext } as unknown as CallRepository,
       { record } as unknown as EvidenceRepository,
+      { assessAcceptedEvidence: vi.fn() } as unknown as RiskDecisionService,
     );
     const event = {
       eventType: MlEvidenceEventType.INSUFFICIENT_EVIDENCE,
@@ -88,6 +90,7 @@ describe('Phase J service authentication and evidence binding', () => {
     const service = new EvidenceIngestionService(
       { findAnalysisGrantContext: vi.fn() } as unknown as CallRepository,
       { record: vi.fn() } as unknown as EvidenceRepository,
+      { assessAcceptedEvidence: vi.fn() } as unknown as RiskDecisionService,
     );
     const ready = {
       eventType: MlEvidenceEventType.FAST,
@@ -134,6 +137,7 @@ describe('Phase J service authentication and evidence binding', () => {
     const service = new EvidenceIngestionService(
       { findAnalysisGrantContext } as unknown as CallRepository,
       { record: vi.fn() } as unknown as EvidenceRepository,
+      { assessAcceptedEvidence: vi.fn() } as unknown as RiskDecisionService,
     );
     await expect(
       service.ingest({

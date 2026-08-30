@@ -19,8 +19,11 @@ import {
   ParticipantStatus,
   RefreshSessionStatus,
   RiskPolicyStatus,
+  RiskAssessmentOutcome,
+  RiskDecisionMode,
   RiskState,
   ScoreDirection,
+  ScoreTarget,
   TrackBindingStatus,
   TrackStatus,
   TrustedSpeakerStatus,
@@ -61,6 +64,8 @@ const ids = {
   verificationChallenge: '018f0000-0000-7000-8000-000000000021',
   alert: '018f0000-0000-7000-8000-000000000022',
   auditLog: '018f0000-0000-7000-8000-000000000023',
+  riskAssessment: '018f0000-0000-7000-8000-000000000024',
+  riskAssessmentEvidence: '018f0000-0000-7000-8000-000000000025',
 } as const;
 
 const issuedAt = new Date('2026-01-15T10:00:00.000Z');
@@ -183,6 +188,7 @@ async function seed(): Promise<void> {
         inputChannelCount: 1,
         scoreName: 'not-applicable',
         scoreDirection: ScoreDirection.NOT_APPLICABLE,
+        scoreTarget: ScoreTarget.AUDIO_QUALITY,
         status: ModelLifecycleStatus.REJECTED,
       },
     });
@@ -350,6 +356,43 @@ async function seed(): Promise<void> {
         policyVersion: '0-test-only',
         thresholdVersion: 'none-fixture',
         occurredAt: issuedAt,
+      },
+    });
+    await prisma.riskAssessment.upsert({
+      where: { id: ids.riskAssessment },
+      update: {},
+      create: {
+        id: ids.riskAssessment,
+        organizationId: ids.organization,
+        callId: ids.call,
+        analysisSessionId: ids.analysisSession,
+        riskPolicyId: ids.riskPolicy,
+        idempotencyKey: 'phase-q-engineering-fixture-assessment',
+        schemaVersion: '1.0.0',
+        evidenceSetHashSha256: 'b'.repeat(64),
+        evidenceMode: 'SHADOW',
+        decisionMode: RiskDecisionMode.SHADOW,
+        outcome: RiskAssessmentOutcome.INSUFFICIENT_EVIDENCE,
+        priorState: RiskState.UNVERIFIED,
+        effectiveState: RiskState.UNVERIFIED,
+        productionEligible: false,
+        activationSuppressed: true,
+        reasonCode: 'PHASE_O_SCIENTIFIC_CALIBRATION_BLOCKED',
+        policyKey: 'phase-f-fixture',
+        policyVersion: '0-test-only',
+        thresholdVersion: 'none-fixture',
+        maxWindowSequence: 1n,
+        occurredAt: issuedAt,
+      },
+    });
+    await prisma.riskAssessmentEvidence.upsert({
+      where: { id: ids.riskAssessmentEvidence },
+      update: {},
+      create: {
+        id: ids.riskAssessmentEvidence,
+        organizationId: ids.organization,
+        riskAssessmentId: ids.riskAssessment,
+        evidenceEventId: ids.evidenceEvent,
       },
     });
     await prisma.riskEventEvidence.upsert({

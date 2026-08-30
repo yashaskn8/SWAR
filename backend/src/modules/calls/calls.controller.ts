@@ -182,4 +182,39 @@ export class CallsController {
       nextCursor: page.nextCursor,
     };
   }
+
+  @Get(':callId/risk-assessments')
+  @RequirePermissions('risk-event.read')
+  @ApiRateLimit('QUERY')
+  @ApiOperation({
+    summary: 'List tenant-scoped engineering/shadow risk assessments and activation status',
+  })
+  async riskAssessments(
+    @CurrentPrincipal() principal: AuthPrincipal,
+    @Param('callId', new ParseUUIDPipe()) callId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    const page = await this.queries.riskAssessments(principal, callId, cursor, limit);
+    return {
+      items: page.items.map((assessment) => ({
+        riskAssessmentId: assessment.id,
+        callId: assessment.callId,
+        outcome: assessment.outcome,
+        effectiveState: assessment.effectiveState,
+        decisionMode: assessment.decisionMode,
+        evidenceMode: assessment.evidenceMode,
+        productionEligible: assessment.productionEligible,
+        activationSuppressed: assessment.activationSuppressed,
+        reasonCode: assessment.reasonCode,
+        policyVersion: assessment.policyVersion,
+        thresholdVersion: assessment.thresholdVersion,
+        calibrationVersion: assessment.calibrationVersion,
+        proposedInterventions: assessment.proposedInterventions,
+        maxWindowSequence: assessment.maxWindowSequence.toString(),
+        occurredAt: assessment.occurredAt.toISOString(),
+      })),
+      nextCursor: page.nextCursor,
+    };
+  }
 }

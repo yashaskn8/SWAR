@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "activationMode": "ENGINEERING_ONLY",
+  "thresholdClassification": "ENGINEERING_FIXTURE_NOT_CALIBRATED",
+  "thresholdVersion": "engineering-fixture-thresholds-v1-not-calibrated",
+  "calibrationVersion": null,
+  "quality": {
+    "minimumScore": 0.5,
+    "minimumSpeechDurationMs": 1000,
+    "rejectingReasonCodes": ["SEVERE_CLIPPING", "DISCONTINUITY"]
+  },
+  "thresholds": {
+    "identityEnter": 0.7,
+    "identityClear": 0.6,
+    "spoofEnter": 0.7,
+    "spoofClear": 0.6
+  },
+  "fusion": { "fastWeight": 0.2, "deepWeight": 0.8 },
+  "hysteresis": {
+    "entryConsecutiveWindows": 2,
+    "clearConsecutiveWindows": 3,
+    "maximumWindowGap": 0
+  },
+  "interventions": {
+    "highRisk": ["WARN"],
+    "critical": ["WARN", "HOLD_PROTECTED_ACTION", "REQUIRE_STEP_UP"]
+  }
+}

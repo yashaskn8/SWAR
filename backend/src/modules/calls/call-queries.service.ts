@@ -34,4 +34,13 @@ export class CallQueriesService {
       ...(limit === undefined ? {} : { limit }),
     });
   }
+
+  async riskAssessments(principal: AuthPrincipal, callId: string, cursor?: string, limit?: number) {
+    this.authorization.assert(principal, 'risk-event.read', principal.organizationId);
+    await this.calls.findCallAggregate({ organizationId: principal.organizationId }, callId);
+    return this.risk.listRiskAssessments({ organizationId: principal.organizationId }, callId, {
+      ...(cursor === undefined ? {} : { cursor }),
+      ...(limit === undefined ? {} : { limit }),
+    });
+  }
 }
