@@ -266,11 +266,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
       sensitiveRateLimitMaximum: reader.integer('API_SENSITIVE_RATE_LIMIT_MAX', 1, 1_000),
       mutationRateLimitMaximum: reader.integer('API_MUTATION_RATE_LIMIT_MAX', 1, 10_000),
       queryRateLimitMaximum: reader.integer('API_QUERY_RATE_LIMIT_MAX', 1, 100_000),
-      securityEventReplayMaximum: reader.integer(
-        'SECURITY_WS_REPLAY_MAX_EVENTS',
-        1,
-        10_000,
-      ),
+      securityEventReplayMaximum: reader.integer('SECURITY_WS_REPLAY_MAX_EVENTS', 1, 10_000),
       securitySubscriptionMaximumCalls: reader.integer(
         'SECURITY_WS_SUBSCRIPTION_MAX_CALLS',
         1,
@@ -287,26 +283,17 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): ApplicationConfigur
         1_024,
         10_485_760,
       ),
-      enrollmentMaximumTotalBytes: reader.integer(
-        'ENROLLMENT_MAX_TOTAL_BYTES',
-        1_024,
-        52_428_800,
-      ),
+      enrollmentMaximumTotalBytes: reader.integer('ENROLLMENT_MAX_TOTAL_BYTES', 1_024, 52_428_800),
       enrollmentMaximumDeclaredDurationMs: reader.integer(
         'ENROLLMENT_MAX_DECLARED_DURATION_MS',
         250,
         300_000,
       ),
-      stepUpChallengeTtlSeconds: reader.integer(
-        'STEP_UP_CHALLENGE_TTL_SECONDS',
-        30,
-        3_600,
-      ),
+      stepUpChallengeTtlSeconds: reader.integer('STEP_UP_CHALLENGE_TTL_SECONDS', 30, 3_600),
     },
   };
   if (
-    configuration.api.enrollmentMaximumTotalBytes <
-    configuration.api.enrollmentMaximumSampleBytes
+    configuration.api.enrollmentMaximumTotalBytes < configuration.api.enrollmentMaximumSampleBytes
   ) {
     reader.invalid.push('ENROLLMENT_MAX_TOTAL_BYTES');
   }

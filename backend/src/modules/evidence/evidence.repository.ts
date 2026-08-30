@@ -50,9 +50,7 @@ export interface RecordEvidenceInput {
 }
 
 function isEquivalent(existing: EvidenceEvent, input: RecordEvidenceInput): boolean {
-  const decimal = (
-    value: Prisma.Decimal | number | string | null | undefined,
-  ): string | null =>
+  const decimal = (value: Prisma.Decimal | number | string | null | undefined): string | null =>
     value === undefined || value === null
       ? null
       : typeof value === 'object'
@@ -72,8 +70,7 @@ function isEquivalent(existing: EvidenceEvent, input: RecordEvidenceInput): bool
     existing.modelVersionId === (input.modelVersionId ?? null) &&
     existing.supersedesEvidenceId === (input.supersedesEvidenceId ?? null) &&
     existing.schemaVersion === input.schemaVersion &&
-    existing.acceptanceStatus ===
-      (input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED) &&
+    existing.acceptanceStatus === (input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED) &&
     existing.observedAt.getTime() === input.observedAt.getTime() &&
     existing.processingLatencyMs === (input.processingLatencyMs ?? null) &&
     existing.speechDurationMs === (input.speechDurationMs ?? null) &&

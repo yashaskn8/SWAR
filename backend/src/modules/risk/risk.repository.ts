@@ -410,21 +410,23 @@ export class RiskRepository {
       return existing;
     }
     try {
-      return await this.prisma.client.verificationChallenge.create({ data: {
-        organizationId,
-        callId: requireUuid(input.callId, 'callId'),
-        interventionId: requireUuid(input.interventionId, 'interventionId'),
-        performedByMembershipId:
-          input.performedByMembershipId === undefined
-            ? null
-            : requireUuid(input.performedByMembershipId, 'performedByMembershipId'),
-        idempotencyKey,
-        method: requireText(input.method, 'method', 80),
-        status: VerificationStatus.PENDING,
-        attemptNumber: input.attemptNumber,
-        requestedAt: new Date(),
-        expiresAt: input.expiresAt,
-      } });
+      return await this.prisma.client.verificationChallenge.create({
+        data: {
+          organizationId,
+          callId: requireUuid(input.callId, 'callId'),
+          interventionId: requireUuid(input.interventionId, 'interventionId'),
+          performedByMembershipId:
+            input.performedByMembershipId === undefined
+              ? null
+              : requireUuid(input.performedByMembershipId, 'performedByMembershipId'),
+          idempotencyKey,
+          method: requireText(input.method, 'method', 80),
+          status: VerificationStatus.PENDING,
+          attemptNumber: input.attemptNumber,
+          requestedAt: new Date(),
+          expiresAt: input.expiresAt,
+        },
+      });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         const replay = await this.prisma.client.verificationChallenge.findUnique({
@@ -465,7 +467,12 @@ export class RiskRepository {
     const organizationId = requireTenant(context);
     const id = requireUuid(input.challengeId, 'challengeId');
     const updated = await this.prisma.client.verificationChallenge.updateMany({
-      where: { organizationId, id, status: VerificationStatus.PENDING, expiresAt: { gt: new Date() } },
+      where: {
+        organizationId,
+        id,
+        status: VerificationStatus.PENDING,
+        expiresAt: { gt: new Date() },
+      },
       data: {
         status: input.status,
         resultCode: requireText(input.resultCode, 'resultCode', 80),
