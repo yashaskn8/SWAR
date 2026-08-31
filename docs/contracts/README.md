@@ -10,7 +10,7 @@ This directory contains SWAR's authoritative transport contracts:
 - [Security WebSocket AsyncAPI](security-events.asyncapi.yaml) defines subscription, acknowledgement, replay, and outbound event payloads.
 - [Backend-to-ML OpenAPI](ml-control.openapi.yaml) defines signed analysis and ephemeral-enrollment
   control; analysis create uses the exact-binding v2 schema while v1 remains historical.
-- [ML-to-backend OpenAPI](ml-evidence.openapi.yaml) defines authenticated, bound, idempotent evidence ingestion.
+- [ML-to-backend OpenAPI](ml-evidence.openapi.yaml) defines authenticated, exact-participant/track-bound, idempotent evidence ingestion. New serving sessions emit the v2 lineage schema; v1 remains documented only for compatibility with preserved evidence.
 - [JSON Schemas](schemas/) define shared error, security-event, ML-control, and evidence payloads.
 - [Risk policy schema](schemas/risk-policy.v1.json) defines the strict Phase Q policy document;
   [the engineering fixture](risk-policy.engineering-fixture.v1.json) is explicitly uncalibrated and

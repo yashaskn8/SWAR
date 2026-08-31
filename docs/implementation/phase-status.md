@@ -25,7 +25,7 @@ Only a phase whose exit gate is `IMPLEMENTED + TESTED + INTEGRATED + DOCUMENTED 
 | N | Real model integration | K, L, M | COMPLETE | Three hash-verified licensed ECAPA/RawNet2/AASIST adapters; versioned score semantics and lifecycle; deterministic non-human CPU compatibility experiment; 89/89 ML tests including real checkpoint smoke plus all Phase N static/documentation/boundary/security checks passed on 2026-08-29. |
 | O | Evaluation/calibration | K, L, N | BLOCKED | Fail-closed evaluation/calibration framework and 18/18 focused tests pass; no approved external governed data root, non-example frozen manifest, data-steward approval, measured score records, or target-hardware profile exists, so no metric/threshold/calibration/promotion is claimed and P remains locked. |
 | P | ML serving/media subscriber | H, J, L, N, O | IMPLEMENTED_NOT_PROMOTED | Authenticated exact-binding NestJS/FastAPI control, restricted LiveKit subscriber, bounded queues/retries/timeouts, idempotent evidence delivery, evidence modes, fail-closed production readiness, graceful cleanup, migration/contracts, and Phase P security/failure tests are implemented. Scientific promotion remains blocked by Phase O. |
-| Q | Risk engine/interventions | F, G, I, J, O, P | IMPLEMENTED_NOT_PROMOTED | Engineering/test/shadow matrix, quality gating, deterministic FAST/DEEP recomputation, hysteresis, an atomic tagged evidence-to-assessment/transition/demo-intervention/outbox transaction, authenticated tenant/call-scoped replay/ack, telemetry, and fail-closed O/P/Q production guards are implemented. Production activation remains blocked. |
+| Q | Risk engine/interventions | F, G, I, J, O, P | IMPLEMENTED_NOT_PROMOTED | Backend engineering and the headless demo are feature-complete: exact-bound evidence, deterministic risk/hysteresis, atomic transition/intervention/outbox, leased demo dispatch/DLQ, REST/WebSocket operations, maintenance, tenant isolation, recovery coverage, and fail-closed production guards. Production activation remains blocked. |
 | R | Frontend foundation | Q backend-completion PASS; J contracts | NOT_STARTED | - |
 | S | Frontend workflows | J, Q, R | NOT_STARTED | - |
 | T | End-to-end integration | D, P, Q, S | NOT_STARTED | - |
@@ -46,6 +46,10 @@ metric result, latency target, or model profile is promoted. The user explicitly
 engineering and then engineering-only Phase Q with fixture/shadow evidence despite that scientific
 blocker. Phase P and Phase Q are implemented but cannot be production-promoted or marked complete.
 Phase R remains locked.
+
+The authorized backend-completion hardening is documented in
+[`backend-engineering-completion.md`](backend-engineering-completion.md). It completes engineering
+and headless-demo behavior without changing the scientific or production-promotion verdicts.
 
 ```text
 Phase O scientific calibration: BLOCKED
@@ -406,21 +410,21 @@ Phase R: LOCKED
   from a bounded canonical cursor, deduplicates stable event IDs, isolates broken subscribers, and
   accepts acknowledgement only for the same organization, membership, subscribed call, and
   dispatched/delivered event. Delivery and demo execution use bounded batch/attempt/backoff state
-  and graceful shutdown flushes. Outbox dispatch uses an expiring PostgreSQL lease to fence
+  and graceful shutdown drains active operations without claiming new work. Outbox dispatch uses an expiring PostgreSQL lease to fence
   concurrent workers and recover abandoned claims; database and conversion invariants reject
   malformed or cross-mode rows before publication.
 - Contracts and tests: PASS - generated REST and AsyncAPI snapshots plus strict risk/security-event
-  schemas pass 19/19 contract tests. The complete ordinary backend suite passes 92 active tests;
+  schemas pass 21/21 contract tests. The complete ordinary backend suite passes 97 active tests;
   17 native-only cases are skipped there and exercised by native harnesses. Prettier, ESLint, strict
   TypeScript, Prisma generation/validation, and Nest build pass.
-- Native/upstream regression: PASS - all five migrations apply on fresh native PostgreSQL 18;
+- Native/upstream regression: PASS - all six migrations apply on fresh native PostgreSQL 18;
   migration status/no-op replay, seed replay, and 13/13 database tests pass, including four matrix
   scenarios, out-of-order DEEP/FAST, atomic rollback, concurrent replay, durable replay/ack, and
   cross-tenant rejection. Native authentication/RBAC/tenant isolation passes 11/11. Complete ML
   regression passes 116 tests with one conditional real-checkpoint smoke skipped; Ruff lint/format,
   Python byte compilation, `pip check`, and `pip-audit` (with only the local non-PyPI `swar-ml`
   package unauditable by name) pass.
-- Documentation/boundaries/security: PASS - documentation headings/links pass for 59 Markdown
+- Documentation/boundaries/security: PASS - documentation headings/links pass for 60 Markdown
   files; positive and negative repository/no-container boundaries pass; `git diff --check`, secret
   signature scan, sensitive artifact extension scan, and forbidden audio/embedding payload-field
   scan pass. No frontend, Docker/Testcontainers artifact, raw audio, embedding, token, private
@@ -443,3 +447,17 @@ Phase R: LOCKED
   intervention audit behavior against genuinely eligible calibrated evidence.
 - Gate verdict: `IMPLEMENTED_NOT_PROMOTED`. Phase O remains scientifically `BLOCKED`; Phase P remains
   not promoted; Phase Q production activation remains disabled; Phase R remains `LOCKED`.
+
+## Backend engineering completion evidence
+
+- Completion scope: PASS - the authorized backend and headless-demo scope now includes v2 exact
+  evidence lineage, transactional risk/intervention/outbox persistence, safe multi-action demo
+  adapters, leased retry/dead-letter dispatch, current-state/security/alert REST contracts,
+  authenticated durable WebSocket delivery, expiry maintenance, production readiness gating,
+  tenant isolation, and recovery/concurrency coverage.
+- Headless orchestration: PASS - native PostgreSQL tests verify fictional trusted genuine ->
+  `VERIFIED`, unknown genuine -> `UNVERIFIED`, trusted clone -> `CRITICAL` plus demo warning/hold/
+  step-up, poor audio -> `INSUFFICIENT_EVIDENCE`, and a noisy transient -> no false `CRITICAL`/hold.
+- Truthful boundary: Phase O stays `BLOCKED`; Phase P and Q stay
+  `IMPLEMENTED_NOT_PROMOTED`; production ML interventions stay fail-closed; no frontend file was
+  modified; Phase R remains locked.

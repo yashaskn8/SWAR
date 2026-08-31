@@ -12,6 +12,7 @@ import {
 } from '../../../src/generated/prisma/client';
 import { EngineeringInterventionExecutorService } from '../../../src/modules/interventions/engineering-intervention-executor.service';
 import type { InterventionPort } from '../../../src/modules/interventions/intervention.port';
+import type { EngineeringActionPort } from '../../../src/modules/interventions/engineering-action.port';
 import { SecurityEventOutboxRepository } from '../../../src/modules/security-events/security-event-outbox.repository';
 import { SecurityEventOutboxService } from '../../../src/modules/security-events/security-event-outbox.service';
 import type { SecurityEventPort } from '../../../src/modules/security-events/security-event.port';
@@ -194,10 +195,13 @@ describe('headless outbox and demo intervention reliability', () => {
       status: 'HELD' as const,
     });
     const provider: InterventionPort = { hold, release: vi.fn() };
+    const demoActions: EngineeringActionPort = { dispatch: vi.fn() };
     const telemetry = new OperationalTelemetryService();
     const service = new EngineeringInterventionExecutorService(
       { client: { intervention: { findMany, updateMany } } } as unknown as PrismaService,
       provider,
+      demoActions,
+      { record: vi.fn().mockResolvedValue(undefined) } as never,
       new ConfigurationService(validTestEnvironment()),
       logger,
       telemetry,
@@ -208,11 +212,58 @@ describe('headless outbox and demo intervention reliability', () => {
       expect.objectContaining({
         organizationId: ids.organizationId,
         interventionId: ids.interventionId,
-        idempotencyKey: `demo-auto-hold:${ids.interventionId}`,
+        idempotencyKey: `demo-dispatch:${ids.interventionId}`,
       }),
     );
     expect(JSON.stringify(updateMany.mock.calls.at(-1))).toContain(
       `"status":"${InterventionStatus.IN_PROGRESS}"`,
     );
+  });
+
+  it('dispatches non-hold DEMO actions through a safe adapter and dead-letters bounded failures', async () => {
+    const candidate = {
+      id: ids.interventionId,
+      organizationId: ids.organizationId,
+      callId: ids.callId,
+      mode: SecurityControlMode.DEMO,
+      type: InterventionType.WARN,
+      status: InterventionStatus.REQUIRED,
+      protectedActionReference: null,
+      executionAttemptCount: 2,
+    };
+    const findMany = vi.fn().mockResolvedValue([candidate]);
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const dispatch = vi.fn().mockRejectedValue(new Error('private-provider-detail'));
+    const service = new EngineeringInterventionExecutorService(
+      { client: { intervention: { findMany, updateMany } } } as unknown as PrismaService,
+      { hold: vi.fn(), release: vi.fn() },
+      { dispatch },
+      { record: vi.fn().mockResolvedValue(undefined) } as never,
+      new ConfigurationService(validTestEnvironment()),
+      logger,
+      new OperationalTelemetryService(),
+    );
+    await expect(service.executePending()).resolves.toBe(0);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: InterventionType.WARN,
+        idempotencyKey: `demo-dispatch:${ids.interventionId}`,
+      }),
+    );
+    const failureUpdate = updateMany.mock.calls.at(-1)?.[0] as {
+      data: {
+        status: InterventionStatus;
+        executionLeaseId: null;
+        executionLeaseExpiresAt: null;
+        deadLetteredAt: Date;
+      };
+    };
+    expect(failureUpdate.data).toMatchObject({
+      status: InterventionStatus.FAILED,
+      executionLeaseId: null,
+      executionLeaseExpiresAt: null,
+    });
+    expect(failureUpdate.data.deadLetteredAt).toBeInstanceOf(Date);
+    expect(JSON.stringify(logEvent.mock.calls)).not.toContain('private-provider-detail');
   });
 });

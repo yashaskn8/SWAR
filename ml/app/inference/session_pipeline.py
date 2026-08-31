@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from time import monotonic
 from uuid import UUID, uuid5
 
@@ -54,6 +54,7 @@ class SensitiveWindow:
     samples: np.ndarray = field(repr=False)
     preprocessing_version: str
     quality: QualityEvidence
+    captured_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     queued_at: float = field(default_factory=monotonic)
 
     def clear(self) -> None:
@@ -274,22 +275,31 @@ class AnalysisSessionRuntime:
             evidence_type = EvidenceType.SPOOF_FAST
         event_type = EventType.DEEP if deep else EventType.FAST
         revision = 1 if deep else 0
+        completed_at = datetime.now(UTC)
+        event_id = self._event_id(window.sequence, evidence_type, revision)
         return EvidenceEvent(
             eventType=event_type,
-            eventId=self._event_id(window.sequence, evidence_type, revision),
-            schemaVersion="1.0.0",
+            eventId=event_id,
+            schemaVersion="2.0.0",
             evidenceMode=self.binding.evidence_mode,
             organizationId=self.binding.organization_id,
             callId=self.binding.call_id,
             analysisSessionId=self.binding.analysis_session_id,
             trackBindingId=self.binding.track_binding_id,
+            participantIdentity=self.binding.participant_identity,
+            trackSid=self.binding.track_sid,
+            windowId=f"{self.binding.analysis_session_id}:{window.sequence}",
+            correlationId=str(event_id),
             eventSequence=str(self._next_event_sequence()),
             windowSequence=str(window.sequence),
             revision=revision,
             evidenceType=evidence_type,
             windowStartMs=str(window.start_ms),
             windowEndMs=str(window.end_ms),
-            observedAt=datetime.now(UTC),
+            observedAt=completed_at,
+            capturedAt=window.captured_at,
+            inferenceStartedAt=completed_at - timedelta(milliseconds=result.processing_latency_ms),
+            inferenceCompletedAt=completed_at,
             processingLatencyMs=result.processing_latency_ms,
             speechDurationMs=window.quality.speech_duration_ms,
             qualityScore=window.quality.quality_score,
@@ -303,15 +313,20 @@ class AnalysisSessionRuntime:
         )
 
     def _insufficient_event(self, window: SensitiveWindow) -> EvidenceEvent:
+        event_id = self._event_id(window.sequence, EvidenceType.INSUFFICIENT_EVIDENCE, 0)
         return EvidenceEvent(
             eventType=EventType.INSUFFICIENT_EVIDENCE,
-            eventId=self._event_id(window.sequence, EvidenceType.INSUFFICIENT_EVIDENCE, 0),
-            schemaVersion="1.0.0",
+            eventId=event_id,
+            schemaVersion="2.0.0",
             evidenceMode=self.binding.evidence_mode,
             organizationId=self.binding.organization_id,
             callId=self.binding.call_id,
             analysisSessionId=self.binding.analysis_session_id,
             trackBindingId=self.binding.track_binding_id,
+            participantIdentity=self.binding.participant_identity,
+            trackSid=self.binding.track_sid,
+            windowId=f"{self.binding.analysis_session_id}:{window.sequence}",
+            correlationId=str(event_id),
             eventSequence=str(self._next_event_sequence()),
             windowSequence=str(window.sequence),
             revision=0,
@@ -319,28 +334,36 @@ class AnalysisSessionRuntime:
             windowStartMs=str(window.start_ms),
             windowEndMs=str(window.end_ms),
             observedAt=datetime.now(UTC),
+            capturedAt=window.captured_at,
             speechDurationMs=window.quality.speech_duration_ms,
             qualityScore=window.quality.quality_score,
             reasonCodes=window.quality.reason_codes + self._mode_labels(),
         )
 
     def _pipeline_error(self, *, window_sequence: int, error_code: str) -> EvidenceEvent:
+        event_id = self._event_id(window_sequence, EvidenceType.PIPELINE_ERROR, 0)
+        observed_at = datetime.now(UTC)
         return EvidenceEvent(
             eventType=EventType.PIPELINE_ERROR,
-            eventId=self._event_id(window_sequence, EvidenceType.PIPELINE_ERROR, 0),
-            schemaVersion="1.0.0",
+            eventId=event_id,
+            schemaVersion="2.0.0",
             evidenceMode=self.binding.evidence_mode,
             organizationId=self.binding.organization_id,
             callId=self.binding.call_id,
             analysisSessionId=self.binding.analysis_session_id,
             trackBindingId=self.binding.track_binding_id,
+            participantIdentity=self.binding.participant_identity,
+            trackSid=self.binding.track_sid,
+            windowId=f"{self.binding.analysis_session_id}:{window_sequence}",
+            correlationId=str(event_id),
             eventSequence=str(self._next_event_sequence()),
             windowSequence=str(window_sequence),
             revision=0,
             evidenceType=EvidenceType.PIPELINE_ERROR,
             windowStartMs="0",
             windowEndMs="0",
-            observedAt=datetime.now(UTC),
+            observedAt=observed_at,
+            capturedAt=observed_at,
             reasonCodes=self._mode_labels(),
             errorCode=error_code[:80],
         )

@@ -23,6 +23,8 @@ import { TrustedSpeakersModule } from './modules/trusted-speakers/trusted-speake
 import { VoiceEnrollmentModule } from './modules/voice-enrollment/voice-enrollment.module';
 import { EvidenceModule } from './modules/evidence/evidence.module';
 import { GovernanceModule } from './modules/governance/governance.module';
+import { SecurityOperationsModule } from './modules/security-operations/security-operations.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { GovernanceModule } from './modules/governance/governance.module';
     MediaModule,
     InterventionsModule,
     SecurityEventsModule,
+    SecurityOperationsModule,
+    MaintenanceModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

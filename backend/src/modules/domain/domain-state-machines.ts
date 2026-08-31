@@ -88,7 +88,12 @@ export const interventionTransitions: TransitionMap<InterventionStatus> = {
     InterventionStatus.CANCELLED,
     InterventionStatus.FAILED,
   ]),
-  ACKNOWLEDGED: new Set([InterventionStatus.IN_PROGRESS, InterventionStatus.EXPIRED]),
+  ACKNOWLEDGED: new Set([
+    InterventionStatus.IN_PROGRESS,
+    InterventionStatus.EXPIRED,
+    InterventionStatus.CANCELLED,
+    InterventionStatus.FAILED,
+  ]),
   IN_PROGRESS: new Set([
     InterventionStatus.SATISFIED,
     InterventionStatus.DECLINED,

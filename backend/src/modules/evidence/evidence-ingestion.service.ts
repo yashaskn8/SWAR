@@ -40,17 +40,35 @@ function invalid(fields: string[]): never {
 }
 
 function assertSemantics(input: MlEvidenceDto): void {
-  if (!['1.0.0', '1.1.0'].includes(input.schemaVersion)) invalid(['schemaVersion']);
+  if (!['1.0.0', '1.1.0', '2.0.0'].includes(input.schemaVersion)) invalid(['schemaVersion']);
   if (input.schemaVersion === '1.1.0' && input.evidenceMode === undefined) {
     invalid(['evidenceMode']);
   }
   const ready =
     input.eventType === MlEvidenceEventType.FAST || input.eventType === MlEvidenceEventType.DEEP;
+  if (
+    input.schemaVersion === '2.0.0' &&
+    [
+      input.participantIdentity,
+      input.trackSid,
+      input.windowId,
+      input.correlationId,
+      input.capturedAt,
+    ].some((value) => value === undefined || value.length === 0)
+  ) {
+    invalid(['participantIdentity', 'trackSid', 'windowId', 'correlationId', 'capturedAt']);
+  }
   if (BigInt(input.windowEndMs) < BigInt(input.windowStartMs)) invalid(['windowEndMs']);
   if (input.calibratedScore !== undefined && input.calibrationVersion === undefined) {
     invalid(['calibrationVersion']);
   }
   if (ready) {
+    if (
+      input.schemaVersion === '2.0.0' &&
+      (input.inferenceStartedAt === undefined || input.inferenceCompletedAt === undefined)
+    ) {
+      invalid(['inferenceStartedAt', 'inferenceCompletedAt']);
+    }
     const expectedTypes =
       input.eventType === MlEvidenceEventType.FAST
         ? new Set<EvidenceType>([EvidenceType.IDENTITY, EvidenceType.SPOOF_FAST])
@@ -120,6 +138,30 @@ export class EvidenceIngestionService {
         HttpStatus.CONFLICT,
       );
     }
+    if (
+      input.schemaVersion === '2.0.0' &&
+      (grant.participant.livekitIdentity !== input.participantIdentity ||
+        grant.mediaTrack.trackSid !== input.trackSid)
+    ) {
+      throw new ApiError(
+        'ANALYSIS_BINDING_CONFLICT',
+        'Evidence does not match the authorized participant and track.',
+        HttpStatus.CONFLICT,
+      );
+    }
+    if (input.schemaVersion === '2.0.0') {
+      const capturedAt = new Date(input.capturedAt!);
+      const startedAt = input.inferenceStartedAt && new Date(input.inferenceStartedAt);
+      const completedAt = input.inferenceCompletedAt && new Date(input.inferenceCompletedAt);
+      const observedAt = new Date(input.observedAt);
+      if (
+        (startedAt !== undefined && capturedAt > startedAt) ||
+        (startedAt !== undefined && completedAt !== undefined && startedAt > completedAt) ||
+        (completedAt !== undefined && completedAt > observedAt)
+      ) {
+        invalid(['capturedAt', 'inferenceStartedAt', 'inferenceCompletedAt', 'observedAt']);
+      }
+    }
     const sessionMode = grant.session.evidenceMode ?? EvidenceMode.SIMULATED;
     if (input.evidenceMode !== undefined && input.evidenceMode !== sessionMode) {
       throw new ApiError(
@@ -142,6 +184,12 @@ export class EvidenceIngestionService {
       callId: input.callId,
       analysisSessionId: input.analysisSessionId,
       trackBindingId: input.trackBindingId,
+      ...(input.participantIdentity === undefined
+        ? {}
+        : { participantIdentity: input.participantIdentity }),
+      ...(input.trackSid === undefined ? {} : { trackSid: input.trackSid }),
+      ...(input.windowId === undefined ? {} : { windowId: input.windowId }),
+      ...(input.correlationId === undefined ? {} : { correlationId: input.correlationId }),
       ...(input.modelVersionId === undefined ? {} : { modelVersionId: input.modelVersionId }),
       idempotencyKey: input.eventId,
       schemaVersion: input.schemaVersion,
@@ -155,6 +203,13 @@ export class EvidenceIngestionService {
       windowStartMs: BigInt(input.windowStartMs),
       windowEndMs: BigInt(input.windowEndMs),
       observedAt: new Date(input.observedAt),
+      ...(input.capturedAt === undefined ? {} : { capturedAt: new Date(input.capturedAt) }),
+      ...(input.inferenceStartedAt === undefined
+        ? {}
+        : { inferenceStartedAt: new Date(input.inferenceStartedAt) }),
+      ...(input.inferenceCompletedAt === undefined
+        ? {}
+        : { inferenceCompletedAt: new Date(input.inferenceCompletedAt) }),
       ...(input.processingLatencyMs === undefined
         ? {}
         : { processingLatencyMs: input.processingLatencyMs }),

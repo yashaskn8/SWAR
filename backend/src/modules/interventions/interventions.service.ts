@@ -26,7 +26,7 @@ export class InterventionsService {
 
   async acknowledge(
     principal: AuthPrincipal,
-    input: { interventionId: string; correlationId: string },
+    input: { interventionId: string; idempotencyKey: string; correlationId: string },
   ): Promise<Intervention> {
     this.authorization.assert(principal, 'intervention.resolve', principal.organizationId);
     const context = { organizationId: principal.organizationId };
@@ -48,12 +48,57 @@ export class InterventionsService {
       organizationId: principal.organizationId,
       actor: principal,
       correlationId: input.correlationId,
+      idempotencyKey: input.idempotencyKey,
       action: 'intervention.acknowledged',
       targetType: 'Intervention',
       targetId: acknowledged.id,
       operation: 'intervention-acknowledge',
     });
     return acknowledged;
+  }
+
+  async cancel(
+    principal: AuthPrincipal,
+    input: {
+      interventionId: string;
+      idempotencyKey: string;
+      correlationId: string;
+      reasonCode: string;
+    },
+  ): Promise<Intervention> {
+    this.authorization.assert(principal, 'intervention.resolve', principal.organizationId);
+    const context = { organizationId: principal.organizationId };
+    const current = await this.risk.findIntervention(context, input.interventionId);
+    if (current.status === InterventionStatus.CANCELLED) return current;
+    if (current.status === InterventionStatus.IN_PROGRESS) {
+      throw new PersistenceConflictError(
+        'An active intervention requires an independently verified resolution.',
+      );
+    }
+    assertTransition(
+      'Intervention',
+      interventionTransitions,
+      current.status,
+      InterventionStatus.CANCELLED,
+    );
+    const cancelled = await this.risk.updateInterventionStatus(context, {
+      interventionId: current.id,
+      expectedStatus: current.status,
+      nextStatus: InterventionStatus.CANCELLED,
+      resolvedByMembershipId: principal.membershipId,
+    });
+    await this.audit.record({
+      organizationId: principal.organizationId,
+      actor: principal,
+      correlationId: input.correlationId,
+      idempotencyKey: input.idempotencyKey,
+      action: 'intervention.cancelled',
+      targetType: 'Intervention',
+      targetId: cancelled.id,
+      reasonCode: input.reasonCode,
+      operation: 'intervention-cancel',
+    });
+    return cancelled;
   }
 
   async hold(

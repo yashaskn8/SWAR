@@ -160,4 +160,77 @@ describe('Phase J service authentication and evidence binding', () => {
       }),
     ).rejects.toMatchObject({ code: 'EVIDENCE_MODE_CONFLICT' });
   });
+
+  it('accepts v2 exact-binding lineage and rejects participant or track substitution', async () => {
+    const findAnalysisGrantContext = vi.fn().mockResolvedValue({
+      call: {
+        id: '018f0000-0000-7000-8000-000000000003',
+        status: CallStatus.ACTIVE,
+      },
+      session: {
+        status: AnalysisSessionStatus.ACTIVE,
+        evidenceMode: EvidenceMode.SHADOW,
+      },
+      binding: { id: '018f0000-0000-7000-8000-000000000005' },
+      participant: { livekitIdentity: 'caller:authorized' },
+      mediaTrack: { trackSid: 'TR_authorized' },
+    });
+    const record = vi.fn().mockResolvedValue({
+      id: '018f0000-0000-7000-8000-000000000099',
+      acceptanceStatus: EvidenceAcceptanceStatus.ACCEPTED,
+    });
+    const service = new EvidenceIngestionService(
+      { findAnalysisGrantContext } as unknown as CallRepository,
+      { record } as unknown as EvidenceRepository,
+      { assessAcceptedEvidence: vi.fn().mockResolvedValue({}) } as unknown as RiskDecisionService,
+    );
+    const event = {
+      eventType: MlEvidenceEventType.FAST,
+      eventId: '018f0000-0000-7000-8000-000000000001',
+      schemaVersion: '2.0.0',
+      evidenceMode: EvidenceMode.SHADOW,
+      organizationId: '018f0000-0000-7000-8000-000000000002',
+      callId: '018f0000-0000-7000-8000-000000000003',
+      analysisSessionId: '018f0000-0000-7000-8000-000000000004',
+      trackBindingId: '018f0000-0000-7000-8000-000000000005',
+      participantIdentity: 'caller:authorized',
+      trackSid: 'TR_authorized',
+      windowId: '018f0000-0000-7000-8000-000000000004:1',
+      correlationId: '018f0000-0000-7000-8000-000000000001',
+      eventSequence: '1',
+      windowSequence: '1',
+      revision: 0,
+      evidenceType: EvidenceType.IDENTITY,
+      windowStartMs: '0',
+      windowEndMs: '4000',
+      capturedAt: '2030-01-01T00:00:00Z',
+      inferenceStartedAt: '2030-01-01T00:00:03Z',
+      inferenceCompletedAt: '2030-01-01T00:00:03.900Z',
+      observedAt: '2030-01-01T00:00:04Z',
+      processingLatencyMs: 900,
+      modelName: 'FICTIONAL_MODEL',
+      modelVersion: 'fictional-v0',
+      checkpointHashSha256: 'a'.repeat(64),
+      scoreName: 'fictional_raw_score',
+      scoreDirection: ScoreDirection.HIGHER_MEANS_MORE,
+      rawScore: 0,
+    };
+    await expect(service.ingest(event)).resolves.toMatchObject({
+      acceptanceStatus: EvidenceAcceptanceStatus.ACCEPTED,
+    });
+    expect(record).toHaveBeenCalledWith(
+      { organizationId: event.organizationId },
+      expect.objectContaining({
+        participantIdentity: event.participantIdentity,
+        trackSid: event.trackSid,
+        windowId: event.windowId,
+      }),
+    );
+    await expect(
+      service.ingest({ ...event, participantIdentity: 'caller:substituted' }),
+    ).rejects.toMatchObject({ code: 'ANALYSIS_BINDING_CONFLICT' });
+    await expect(service.ingest({ ...event, trackSid: 'TR_substituted' })).rejects.toMatchObject({
+      code: 'ANALYSIS_BINDING_CONFLICT',
+    });
+  });
 });

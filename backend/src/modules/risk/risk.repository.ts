@@ -642,6 +642,9 @@ export class RiskRepository {
       where: { organizationId, id, status: input.expectedStatus },
       data: {
         status: input.nextStatus,
+        ...(input.nextStatus === InterventionStatus.ACKNOWLEDGED
+          ? { acknowledgedAt: new Date() }
+          : {}),
         ...(input.resolvedByMembershipId === undefined
           ? {}
           : {
@@ -650,7 +653,14 @@ export class RiskRepository {
                 'resolvedByMembershipId',
               ),
             }),
-        ...(resolved ? { resolvedAt: new Date() } : {}),
+        ...(resolved
+          ? {
+              resolvedAt: new Date(),
+              executionLeaseId: null,
+              executionLeaseExpiresAt: null,
+              nextAttemptAt: null,
+            }
+          : {}),
       },
     });
     if (update.count !== 1) {

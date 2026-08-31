@@ -10,6 +10,7 @@ import { SecurityEventOutboxRepository } from './security-event-outbox.repositor
 export class SecurityEventOutboxService implements OnApplicationBootstrap, OnApplicationShutdown {
   private timer?: NodeJS.Timeout;
   private flushing = false;
+  private shuttingDown = false;
 
   constructor(
     private readonly repository: SecurityEventOutboxRepository,
@@ -29,12 +30,16 @@ export class SecurityEventOutboxService implements OnApplicationBootstrap, OnApp
   }
 
   async onApplicationShutdown(): Promise<void> {
+    this.shuttingDown = true;
     if (this.timer !== undefined) clearInterval(this.timer);
-    await this.flushSafely();
+    const deadline = Date.now() + this.configuration.values.runtime.shutdownTimeoutMs;
+    while (this.flushing && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
   }
 
   async flush(): Promise<number> {
-    if (this.flushing) return 0;
+    if (this.flushing || this.shuttingDown) return 0;
     this.flushing = true;
     let delivered = 0;
     try {

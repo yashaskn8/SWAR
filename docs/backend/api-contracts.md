@@ -26,7 +26,9 @@ Every generated REST operation carries `x-swar-error-codes`, `x-swar-auth-kind`,
 | `POST /api/v1/calls/{callId}/join-token` | Join authorized call | JWT / `call.read` | Call and participant UUIDs | Fresh short-lived join grant | Rejects non-owning membership | Not cached; fresh bounded grant | SENSITIVE |
 | `POST /api/v1/calls/{callId}/end` | End and clean call | JWT / `call.end` | Call UUID | Safe call view | Revokes analysis/participants and closes room with explicit failed state | Header | MUTATION |
 | `GET /api/v1/calls/active` | Active calls | JWT / `call.read` | Bounded cursor/limit | Safe paginated calls | Read only | Not applicable | QUERY |
+| `GET /api/v1/calls/{callId}` | Current call/security state | JWT / `call.read` | Tenant call UUID | Safe participants, current assessment/transition, active interventions | Read only; no raw evidence payload | Not applicable | QUERY |
 | `GET /api/v1/calls/{callId}/risk-events` | Risk history | JWT / `risk-event.read` | Tenant call UUID, cursor/limit | State/reason/policy/threshold versions; bigint sequence as string | Read only; no raw model payload | Not applicable | QUERY |
+| `GET /api/v1/calls/{callId}/risk-assessments` | Assessment history | JWT / `risk-event.read` | Tenant call UUID, cursor/limit | Decision/evidence mode and production suppression trace | Read only | Not applicable | QUERY |
 | `POST /api/v1/trusted-speakers` | Create trusted-speaker record | JWT / `enrollment.manage` | Label and optional tenant-local references | ID, status, label | Database/audit write | Header | SENSITIVE |
 | `POST /api/v1/trusted-speakers/{id}/consents` | Record consent | JWT / `enrollment.manage` | Explicit `true`, notice/purpose version, optional expiry | Consent lifecycle only | Consent/audit write | Header | SENSITIVE |
 | `POST /api/v1/voice-enrollments` | Ephemeral enrollment | JWT / `enrollment.manage` | Bounded audio MIME/count/bytes and declared durations; matching active consent/model | Voiceprint/model IDs and status only | Buffers clear on success/error; encrypted persistence only | Header | SENSITIVE |
@@ -37,6 +39,13 @@ Every generated REST operation carries `x-swar-error-codes`, `x-swar-auth-kind`,
 | `POST /api/v1/interventions/{id}/verification-challenges` | Request independent verification | JWT / `intervention.resolve` | Method | Challenge lifecycle and expiry | Persists bounded challenge; no result is self-asserted | Header | SENSITIVE |
 | `POST /api/v1/internal/verifications/{id}/result` | Verification adapter callback | `swar-verifier` credential | Organization UUID, PASSED/FAILED, result code | Challenge ID/status/result code | Only pending non-expired challenge can complete | Persisted lifecycle replay | SENSITIVE |
 | `POST /api/v1/interventions/{id}/release` | Release protected-action hold | JWT / `intervention.resolve` | Persisted challenge UUID | Intervention ID/status | Requires same-tenant, same-call, same-intervention, unexpired PASSED challenge | Header | SENSITIVE |
+| `POST /api/v1/interventions/{id}/acknowledge` | Acknowledge intervention | JWT / `intervention.resolve` | Tenant intervention UUID | Intervention ID/status | Tenant-scoped transition and audit | Header | MUTATION |
+| `POST /api/v1/interventions/{id}/hold` | Apply demo hold | JWT / `intervention.resolve` | Tenant demo hold UUID | Intervention ID/status | Demo adapter only; production activation remains fail-closed | Header | SENSITIVE |
+| `POST /api/v1/interventions/{id}/cancel` | Cancel pending intervention | JWT / `intervention.resolve` | Tenant intervention UUID and reason | Intervention ID/status | Cannot cancel/release an active hold | Header | SENSITIVE |
+| `GET /api/v1/alerts/active` | Active alerts | JWT / `risk-event.read` | Bounded cursor/limit | Safe paginated alert summary | Read only | Not applicable | QUERY |
+| `POST /api/v1/alerts/{id}/acknowledge` | Acknowledge alert | JWT / `intervention.resolve` | Tenant alert UUID | Alert ID/status/time | Tenant-scoped acknowledgement and audit | Header | SENSITIVE |
+| `GET /api/v1/security-events` | Security history | JWT / `risk-event.read` | Optional tenant-call filter, cursor/limit | Safe transitions and intervention summaries | Read only | Not applicable | QUERY |
+| `GET /api/v1/dashboard/summary` | Security summary | JWT / `risk-event.read` | None | Tenant-only counts | Read only | Not applicable | QUERY |
 | `POST /api/v1/media/livekit/webhook` | Bind verified lifecycle | LiveKit signed webhook | Raw signed JSON before parsing/binding | `204` | Exact authoritative participant/track binding and analysis lifecycle | Verified event ID plus body hash | Not throttled here; signature/replay bounded |
 | `POST /api/v1/internal/ml/evidence` | Ingest ML evidence | `swar-ml` credential | JSON Schema evidence; key equals event ID | Evidence/event IDs and ACCEPTED/STALE | Tenant/call/session/track verification before persistence; terminal evidence is STALE | Event ID | MUTATION |
 
@@ -48,7 +57,7 @@ The standard `ws` endpoint is `/ws/security`. Non-browser clients may send `Auth
 
 ## 4. Evidence semantics
 
-`FAST` carries either IDENTITY or SPOOF_FAST ready evidence. `DEEP` carries SPOOF_DEEP. Ready evidence requires model name/version, checkpoint SHA-256, score name/direction, raw score, window/event sequences, timestamps, and measured processing latency. `calibratedScore` is optional and requires `calibrationVersion`. Unsupported schema versions fail validation rather than being guessed.
+`FAST` carries either IDENTITY or SPOOF_FAST ready evidence. `DEEP` carries SPOOF_DEEP. Ready v2 evidence requires model name/version, checkpoint SHA-256, score name/direction, raw score, exact participant identity/track SID, stable window/correlation IDs, window/event sequences, capture/inference/observation timestamps, and measured processing latency. `calibratedScore` is optional and requires `calibrationVersion`. Unsupported schema versions fail validation rather than being guessed. Preserved v1 evidence remains readable but new serving sessions emit v2.
 
 `INSUFFICIENT_EVIDENCE` requires reason codes and forbids scores. `PIPELINE_ERROR` requires an error code and forbids scores. Poor audio does not imply CRITICAL. The ingestion adapter never converts raw logits to probability and never computes a risk state.
 
@@ -58,9 +67,7 @@ Upload sizes/counts, replay depth, subscription count, challenge expiry, and rat
 
 VALIDATION REQUIRED:
 
-- Phase P must implement the FastAPI endpoints and prove that runtime types are generated or validated from the ML schemas.
-- Phase P must validate actual audio decoding, format, duration, and clearing; Phase J validates transport declarations and byte/MIME bounds only.
 - The independent verifier endpoint is an adapter boundary. A real bank-core/callback provider, its credential issuance, assurance level, and contract remain a FUTURE ENTERPRISE INTEGRATION.
-- Phase Q must connect accepted evidence to temporal policy, interventions, and all four event types; Phase J only transports versioned events.
-- Phase Q must freeze and enforce the semantic schema for risk-policy documents before any document can drive a risk decision; Phase J preserves immutable versioning and authorization but does not invent thresholds.
-- Replay is single-process bounded memory for the SIH build. Multi-node/durable replay requires a future architecture decision.
+- Phase O governed scientific evaluation/calibration and the resulting promotion approval remain required.
+- Real production notification, hold, step-up/callback, supervisor, and end-call providers require explicit integration, security review, credentials, and Phase Q production promotion.
+- Exact evidence/audit retention durations require the approved organization schedule; SWAR does not invent them.

@@ -31,6 +31,7 @@ import { IdentityRepository } from '../../../src/modules/identity/identity.repos
 import { HeadlessRiskPipelineService } from '../../../src/modules/risk/headless-risk-pipeline.service';
 import { RiskActivationGateService } from '../../../src/modules/risk/risk-activation-gate.service';
 import { SecurityEventOutboxRepository } from '../../../src/modules/security-events/security-event-outbox.repository';
+import { SecurityOperationsRepository } from '../../../src/modules/security-operations/security-operations.repository';
 import { validTestEnvironment } from '../../test-environment';
 
 const databaseEnabled = process.env.SWAR_RUN_DATABASE_TESTS === 'true';
@@ -85,6 +86,7 @@ describe.skipIf(!databaseEnabled)('headless atomic evidence-to-intervention loop
   const governance = new GovernanceRepository(prisma, transactions);
   const calls = new CallRepository(prisma, transactions);
   const securityOutbox = new SecurityEventOutboxRepository(prisma);
+  const securityOperations = new SecurityOperationsRepository(prisma);
   let models: Record<'identity' | 'fast' | 'deep', ModelVersion>;
 
   beforeAll(async () => {
@@ -403,6 +405,37 @@ describe.skipIf(!databaseEnabled)('headless atomic evidence-to-intervention loop
     expect(
       await prisma.client.intervention.count({ where: { organizationId: poor.organizationId } }),
     ).toBe(0);
+
+    const transient = await createScenario('noisy-transient');
+    let sequence = 0;
+    for (const [window, identityScore, spoofScore] of [
+      [1, 0.9, 0.9],
+      [2, 0.9, 0.1],
+    ] as const) {
+      for (const [evidenceType, score] of [
+        [EvidenceType.IDENTITY, identityScore],
+        [EvidenceType.SPOOF_FAST, spoofScore],
+      ] as const) {
+        sequence += 1;
+        await pipeline.ingestAcceptedEvidence({
+          organizationId: transient.organizationId,
+          evidence: scored(transient, { sequence, window, evidenceType, score }),
+        });
+      }
+    }
+    expect(
+      await prisma.client.riskEvent.count({
+        where: { organizationId: transient.organizationId, state: 'CRITICAL' },
+      }),
+    ).toBe(0);
+    expect(
+      await prisma.client.intervention.count({
+        where: {
+          organizationId: transient.organizationId,
+          type: 'HOLD_PROTECTED_ACTION',
+        },
+      }),
+    ).toBe(0);
   }, 30_000);
 
   test('coalesces a concurrent replay and rolls back the complete unit on downstream failure', async () => {
@@ -473,5 +506,24 @@ describe.skipIf(!databaseEnabled)('headless atomic evidence-to-intervention loop
         where: { organizationId: tenantB.organizationId, idempotencyKey: input.idempotencyKey },
       }),
     ).toBe(0);
+
+    await runTwoWindows(tenantA, 0.9, 0.9, true);
+    const tenantAAlerts = await securityOperations.listActiveAlerts(
+      { organizationId: tenantA.organizationId },
+      { limit: 100 },
+    );
+    expect(tenantAAlerts.items.length).toBeGreaterThan(0);
+    const tenantBAlerts = await securityOperations.listActiveAlerts(
+      { organizationId: tenantB.organizationId },
+      { limit: 100 },
+    );
+    expect(tenantBAlerts.items).toHaveLength(0);
+    await expect(
+      securityOperations.acknowledgeAlert(
+        { organizationId: tenantB.organizationId },
+        tenantAAlerts.items[0]!.id,
+        tenantB.membershipId,
+      ),
+    ).rejects.toBeDefined();
   });
 });

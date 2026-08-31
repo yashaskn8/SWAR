@@ -318,6 +318,62 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
         resultCode: { type: 'string' },
       },
     },
+    CurrentCallSecurity: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'callId',
+        'status',
+        'riskPolicyVersion',
+        'createdAt',
+        'participants',
+        'risk',
+        'latestTransition',
+        'activeInterventions',
+      ],
+      properties: {
+        callId: { type: 'string', format: 'uuid' },
+        status: { type: 'string' },
+        riskPolicyVersion: { type: 'string' },
+        createdAt: { type: 'string', format: 'date-time' },
+        startedAt: { type: 'string', format: 'date-time', nullable: true },
+        endedAt: { type: 'string', format: 'date-time', nullable: true },
+        participants: { type: 'array', items: { type: 'object' } },
+        risk: { type: 'object', nullable: true },
+        latestTransition: { type: 'object', nullable: true },
+        activeInterventions: { type: 'array', items: { type: 'object' } },
+      },
+    },
+    SecurityOperationsPage: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['items', 'nextCursor'],
+      properties: {
+        items: { type: 'array', items: { type: 'object' } },
+        nextCursor: { type: 'string', nullable: true },
+      },
+    },
+    DashboardSummary: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['activeCalls', 'unacknowledgedAlerts', 'activeInterventions', 'riskEventsByState'],
+      properties: {
+        activeCalls: { type: 'integer', minimum: 0 },
+        unacknowledgedAlerts: { type: 'integer', minimum: 0 },
+        activeInterventions: { type: 'integer', minimum: 0 },
+        riskEventsByState: { type: 'object', additionalProperties: { type: 'integer' } },
+      },
+    },
+    AlertAcknowledgement: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['alertId', 'status', 'acknowledgedAt'],
+      properties: {
+        alertId: { type: 'string', format: 'uuid' },
+        status: { type: 'string' },
+        acknowledgedAt: { type: 'string', format: 'date-time' },
+      },
+    },
   });
   const responseSchemas: Record<string, string> = {
     'Auth.login': 'AuthSession',
@@ -329,6 +385,7 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Calls.active': 'ActiveCallsPage',
     'Calls.riskEvents': 'RiskEventsPage',
     'Calls.riskAssessments': 'RiskAssessmentsPage',
+    'Calls.current': 'CurrentCallSecurity',
     'TrustedSpeakers.create': 'TrustedSpeaker',
     'TrustedSpeakers.consent': 'Consent',
     'TrustedSpeakers.revoke': 'StatusResult',
@@ -340,6 +397,13 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Interventions.request': 'VerificationChallenge',
     'Interventions.complete': 'VerificationResult',
     'Interventions.release': 'StatusResult',
+    'Interventions.acknowledge': 'StatusResult',
+    'Interventions.hold': 'StatusResult',
+    'Interventions.cancel': 'StatusResult',
+    'SecurityOperations.alerts': 'SecurityOperationsPage',
+    'SecurityOperations.acknowledge': 'AlertAcknowledgement',
+    'SecurityOperations.securityEvents': 'SecurityOperationsPage',
+    'SecurityOperations.summary': 'DashboardSummary',
   };
   const permissions: Record<string, string[]> = {
     'Calls.create': ['call.create'],
@@ -349,6 +413,7 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Calls.active': ['call.read'],
     'Calls.riskEvents': ['risk-event.read'],
     'Calls.riskAssessments': ['risk-event.read'],
+    'Calls.current': ['call.read'],
     'TrustedSpeakers.create': ['enrollment.manage'],
     'TrustedSpeakers.consent': ['enrollment.manage'],
     'TrustedSpeakers.revoke': ['enrollment.manage'],
@@ -358,6 +423,13 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'RiskPolicy.put': ['risk-policy.manage'],
     'Interventions.request': ['intervention.resolve'],
     'Interventions.release': ['intervention.resolve'],
+    'Interventions.acknowledge': ['intervention.resolve'],
+    'Interventions.hold': ['intervention.resolve'],
+    'Interventions.cancel': ['intervention.resolve'],
+    'SecurityOperations.alerts': ['risk-event.read'],
+    'SecurityOperations.acknowledge': ['intervention.resolve'],
+    'SecurityOperations.securityEvents': ['risk-event.read'],
+    'SecurityOperations.summary': ['risk-event.read'],
   };
   const sensitive = new Set([
     'Auth.login',
@@ -373,12 +445,19 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Interventions.request',
     'Interventions.complete',
     'Interventions.release',
+    'Interventions.hold',
+    'Interventions.cancel',
+    'SecurityOperations.acknowledge',
   ]);
   const queries = new Set([
     'Calls.active',
     'Calls.riskEvents',
     'Calls.riskAssessments',
+    'Calls.current',
     'RiskPolicy.active',
+    'SecurityOperations.alerts',
+    'SecurityOperations.securityEvents',
+    'SecurityOperations.summary',
   ]);
   const idempotent = new Set([
     'Calls.create',
@@ -393,6 +472,10 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'RiskPolicy.put',
     'Interventions.request',
     'Interventions.release',
+    'Interventions.acknowledge',
+    'Interventions.hold',
+    'Interventions.cancel',
+    'SecurityOperations.acknowledge',
     'LiveKitWebhook.receive',
   ]);
   const operationErrorCodes: Record<string, string[]> = {
@@ -439,6 +522,18 @@ export function createPublicOpenApi(app: INestApplication): OpenAPIObject {
     'Interventions.request': ['NOT_FOUND', 'CONFLICT', 'STEP_UP_NOT_REQUIRED'],
     'Interventions.complete': ['NOT_FOUND', 'CONFLICT'],
     'Interventions.release': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'Interventions.acknowledge': ['NOT_FOUND', 'CONFLICT'],
+    'Interventions.hold': ['NOT_FOUND', 'CONFLICT', 'DOMAIN_PROVIDER_FAILED'],
+    'Interventions.cancel': ['NOT_FOUND', 'CONFLICT'],
+    'Calls.current': ['NOT_FOUND', 'DEPENDENCY_UNAVAILABLE'],
+    'SecurityOperations.alerts': ['PAGINATION_CURSOR_INVALID', 'DEPENDENCY_UNAVAILABLE'],
+    'SecurityOperations.acknowledge': ['NOT_FOUND', 'CONFLICT'],
+    'SecurityOperations.securityEvents': [
+      'NOT_FOUND',
+      'PAGINATION_CURSOR_INVALID',
+      'DEPENDENCY_UNAVAILABLE',
+    ],
+    'SecurityOperations.summary': ['DEPENDENCY_UNAVAILABLE'],
   };
   const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
   for (const pathItem of Object.values(document.paths)) {

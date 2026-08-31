@@ -260,22 +260,29 @@ def test_expired_grant_and_model_outage_fail_closed() -> None:
 
 
 def pipeline_error_event() -> EvidenceEvent:
+    event_id = uuid4()
+    observed_at = datetime.now(UTC)
     return EvidenceEvent(
         eventType=EventType.PIPELINE_ERROR,
-        eventId=uuid4(),
-        schemaVersion="1.0.0",
+        eventId=event_id,
+        schemaVersion="2.0.0",
         evidenceMode="SIMULATED",
         organizationId=uuid4(),
         callId=uuid4(),
         analysisSessionId=uuid4(),
         trackBindingId=uuid4(),
+        participantIdentity="caller:test-authorized",
+        trackSid="TR_authorized",
+        windowId="fixture-session:1",
+        correlationId=str(event_id),
         eventSequence="1",
         windowSequence="1",
         revision=0,
         evidenceType=EvidenceType.PIPELINE_ERROR,
         windowStartMs="0",
         windowEndMs="0",
-        observedAt=datetime.now(UTC),
+        observedAt=observed_at,
+        capturedAt=observed_at,
         reasonCodes=["SIMULATED_NON_SCIENTIFIC_EVIDENCE"],
         errorCode="FIXTURE_PIPELINE_ERROR",
     )

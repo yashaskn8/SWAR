@@ -23,7 +23,7 @@
         "policyVersion": { "type": "string", "maxLength": 40 },
         "mode": { "enum": ["DEMO", "SHADOW", "PRODUCTION"] },
         "interventionType": {
-          "enum": ["WARN", "HOLD_PROTECTED_ACTION", "REQUIRE_STEP_UP", "REQUIRE_CALLBACK", "END_CALL"]
+          "enum": ["WARN", "HOLD_PROTECTED_ACTION", "REQUIRE_STEP_UP", "REQUIRE_CALLBACK", "SUPERVISOR_ESCALATION", "END_CALL"]
         }
       }
     }

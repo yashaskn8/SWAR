@@ -54,6 +54,8 @@ Phase E defined this plan and validated the Prisma schema without creating a mig
 | Membership roles | `(organizationId, membershipId)` | `CASCADE` | Pure authorization join only; membership deletion is itself explicit/audited. |
 | Risk event evidence | `(organizationId, riskEventId)` | `CASCADE`; evidence FK `RESTRICT` | Pure provenance join; evidence remains protected from parent cleanup. |
 | Risk assessment evidence | `(organizationId, riskAssessmentId)` | `CASCADE`; evidence FK `RESTRICT` | Pure assessment provenance join; evidence remains protected from parent cleanup. |
+| Exact evidence window lineage | `(organizationId, analysisSessionId, windowId)` | Nullable only for preserved v1 evidence | Efficient v2 window trace lookup without storing audio or content. |
+| Intervention execution lease | `(status, executionLeaseExpiresAt, nextAttemptAt)` | Lease ID and expiry are both null or both present | Fences concurrent demo workers and recovers abandoned claims; dead-letter timestamp requires `FAILED`. |
 | Audit target | no polymorphic FK | application tenant check | `targetType`/`targetId` are validated against the actor tenant before append. |
 
 `Alert.interventionId`, `RiskEvent.analysisSessionId`, and other optional composite relations still include the non-null tenant key. Phase F integration tests must prove null optional IDs work and a non-null cross-tenant ID fails.

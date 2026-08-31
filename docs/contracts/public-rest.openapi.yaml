@@ -826,6 +826,67 @@
         ]
       }
     },
+    "/api/v1/calls/{callId}": {
+      "get": {
+        "operationId": "Calls.current",
+        "parameters": [
+          {
+            "name": "callId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentCallSecurity"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve the current tenant-scoped call and security state",
+        "tags": [
+          "calls"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "call.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
     "/api/v1/trusted-speakers": {
       "post": {
         "operationId": "TrustedSpeakers.create",
@@ -1326,6 +1387,230 @@
         ]
       }
     },
+    "/api/v1/interventions/{interventionId}/acknowledge": {
+      "post": {
+        "operationId": "Interventions.acknowledge",
+        "parameters": [
+          {
+            "name": "interventionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Acknowledge a tenant-scoped intervention idempotently",
+        "tags": [
+          "interventions"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "intervention.resolve"
+        ],
+        "x-swar-rate-limit-category": "MUTATION",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/interventions/{interventionId}/hold": {
+      "post": {
+        "operationId": "Interventions.hold",
+        "parameters": [
+          {
+            "name": "interventionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Apply an authorized demo protected-action hold idempotently",
+        "tags": [
+          "interventions"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "intervention.resolve"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "DOMAIN_PROVIDER_FAILED",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/interventions/{interventionId}/cancel": {
+      "post": {
+        "operationId": "Interventions.cancel",
+        "parameters": [
+          {
+            "name": "interventionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelInterventionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel a pending intervention without releasing an active hold",
+        "tags": [
+          "interventions"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "intervention.resolve"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
     "/api/v1/interventions/{interventionId}/verification-challenges": {
       "post": {
         "operationId": "Interventions.request",
@@ -1782,6 +2067,276 @@
           "WEBHOOK_EVENT_INVALID"
         ]
       }
+    },
+    "/api/v1/alerts/active": {
+      "get": {
+        "operationId": "SecurityOperations.alerts",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityOperationsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List active unacknowledged alerts in the authenticated tenant",
+        "tags": [
+          "security-operations"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-event.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "PAGINATION_CURSOR_INVALID",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/alerts/{alertId}/acknowledge": {
+      "post": {
+        "operationId": "SecurityOperations.acknowledge",
+        "parameters": [
+          {
+            "name": "alertId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertAcknowledgement"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Acknowledge a tenant-scoped alert idempotently",
+        "tags": [
+          "security-operations"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "intervention.resolve"
+        ],
+        "x-swar-rate-limit-category": "SENSITIVE",
+        "x-swar-idempotency": "IDEMPOTENCY_KEY_REQUIRED",
+        "x-swar-error-codes": [
+          "CONFLICT",
+          "FORBIDDEN",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/security-events": {
+      "get": {
+        "operationId": "SecurityOperations.securityEvents",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "callId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityOperationsPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List paginated tenant security-event history",
+        "tags": [
+          "security-operations"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-event.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "PAGINATION_CURSOR_INVALID",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
+    },
+    "/api/v1/dashboard/summary": {
+      "get": {
+        "operationId": "SecurityOperations.summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable non-sensitive error envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retrieve a tenant-scoped backend security summary",
+        "tags": [
+          "security-operations"
+        ],
+        "x-swar-auth-kind": "USER_ACCESS_JWT",
+        "x-swar-required-permissions": [
+          "risk-event.read"
+        ],
+        "x-swar-rate-limit-category": "QUERY",
+        "x-swar-idempotency": "NOT_APPLICABLE",
+        "x-swar-error-codes": [
+          "DEPENDENCY_UNAVAILABLE",
+          "FORBIDDEN",
+          "INTERNAL_ERROR",
+          "RATE_LIMITED",
+          "TOKEN_INVALID",
+          "VALIDATION_FAILED"
+        ]
+      }
     }
   },
   "info": {
@@ -1971,7 +2526,8 @@
             "type": "string",
             "enum": [
               "1.0.0",
-              "1.1.0"
+              "1.1.0",
+              "2.0.0"
             ]
           },
           "evidenceMode": {
@@ -1997,6 +2553,18 @@
           "trackBindingId": {
             "type": "string",
             "format": "uuid"
+          },
+          "participantIdentity": {
+            "type": "string"
+          },
+          "trackSid": {
+            "type": "string"
+          },
+          "windowId": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string"
           },
           "eventSequence": {
             "type": "string",
@@ -2033,6 +2601,18 @@
             "type": "string",
             "format": "date-time"
           },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "inferenceStartedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "inferenceCompletedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "processingLatencyMs": {
             "type": "number",
             "minimum": 0
@@ -2042,7 +2622,9 @@
             "minimum": 0
           },
           "qualityScore": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
           },
           "reasonCodes": {
             "type": "array",
@@ -2079,7 +2661,9 @@
             "type": "number"
           },
           "calibratedScore": {
-            "type": "number"
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
           },
           "calibrationVersion": {
             "type": "string"
@@ -2103,6 +2687,18 @@
           "windowStartMs",
           "windowEndMs",
           "observedAt"
+        ]
+      },
+      "CancelInterventionDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "reasonCode"
         ]
       },
       "CreateVerificationChallengeDto": {
@@ -2872,6 +3468,138 @@
           },
           "resultCode": {
             "type": "string"
+          }
+        }
+      },
+      "CurrentCallSecurity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "callId",
+          "status",
+          "riskPolicyVersion",
+          "createdAt",
+          "participants",
+          "risk",
+          "latestTransition",
+          "activeInterventions"
+        ],
+        "properties": {
+          "callId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "riskPolicyVersion": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "risk": {
+            "type": "object",
+            "nullable": true
+          },
+          "latestTransition": {
+            "type": "object",
+            "nullable": true
+          },
+          "activeInterventions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "SecurityOperationsPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "DashboardSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "activeCalls",
+          "unacknowledgedAlerts",
+          "activeInterventions",
+          "riskEventsByState"
+        ],
+        "properties": {
+          "activeCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unacknowledgedAlerts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "activeInterventions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "riskEventsByState": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "AlertAcknowledgement": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "alertId",
+          "status",
+          "acknowledgedAt"
+        ],
+        "properties": {
+          "alertId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

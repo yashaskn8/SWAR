@@ -8,6 +8,8 @@ import { InterventionsService } from './interventions.service';
 import { InterventionsController } from './interventions.controller';
 import { StepUpService } from './step-up.service';
 import { EngineeringInterventionExecutorService } from './engineering-intervention-executor.service';
+import { EngineeringActionPort } from './engineering-action.port';
+import { SafeDemoActionAdapter } from './safe-demo-action.adapter';
 
 @Module({
   imports: [AuditModule, AuthModule],
@@ -18,6 +20,8 @@ import { EngineeringInterventionExecutorService } from './engineering-interventi
     InterventionsService,
     StepUpService,
     EngineeringInterventionExecutorService,
+    SafeDemoActionAdapter,
+    { provide: EngineeringActionPort, useExisting: SafeDemoActionAdapter },
   ],
   exports: [
     InterventionsService,

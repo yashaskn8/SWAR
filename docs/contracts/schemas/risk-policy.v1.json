@@ -98,6 +98,7 @@
         "HOLD_PROTECTED_ACTION",
         "REQUIRE_STEP_UP",
         "REQUIRE_CALLBACK",
+        "SUPERVISOR_ESCALATION",
         "END_CALL"
       ]
     }

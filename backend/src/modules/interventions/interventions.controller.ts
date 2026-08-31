@@ -1,4 +1,14 @@
-import { Body, Controller, Headers, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import { requireIdempotencyKey } from '../../common/api/request-contracts';
@@ -16,6 +26,7 @@ import {
   CompleteVerificationChallengeDto,
   CreateVerificationChallengeDto,
   ReleaseInterventionDto,
+  CancelInterventionDto,
 } from './interventions.contracts';
 import { InterventionsService } from './interventions.service';
 import { StepUpService } from './step-up.service';
@@ -28,6 +39,71 @@ export class InterventionsController {
     private readonly stepUp: StepUpService,
     private readonly requestContext: RequestContextService,
   ) {}
+
+  @Post('interventions/:interventionId/acknowledge')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AccessTokenGuard, RolesGuard, ApiRateLimitGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('intervention.resolve')
+  @ApiRateLimit('MUTATION')
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiOperation({ summary: 'Acknowledge a tenant-scoped intervention idempotently' })
+  async acknowledge(
+    @CurrentPrincipal() principal: AuthPrincipal,
+    @Param('interventionId', new ParseUUIDPipe()) interventionId: string,
+    @Headers('idempotency-key') header: string | undefined,
+  ) {
+    const intervention = await this.interventions.acknowledge(principal, {
+      interventionId,
+      idempotencyKey: requireIdempotencyKey(header),
+      correlationId: this.requestContext.requireRequestId(),
+    });
+    return { interventionId: intervention.id, status: intervention.status };
+  }
+
+  @Post('interventions/:interventionId/hold')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AccessTokenGuard, RolesGuard, ApiRateLimitGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('intervention.resolve')
+  @ApiRateLimit('SENSITIVE')
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiOperation({ summary: 'Apply an authorized demo protected-action hold idempotently' })
+  async hold(
+    @CurrentPrincipal() principal: AuthPrincipal,
+    @Param('interventionId', new ParseUUIDPipe()) interventionId: string,
+    @Headers('idempotency-key') header: string | undefined,
+  ) {
+    const intervention = await this.interventions.hold(principal, {
+      interventionId,
+      idempotencyKey: requireIdempotencyKey(header),
+      correlationId: this.requestContext.requireRequestId(),
+    });
+    return { interventionId: intervention.id, status: intervention.status };
+  }
+
+  @Post('interventions/:interventionId/cancel')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AccessTokenGuard, RolesGuard, ApiRateLimitGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('intervention.resolve')
+  @ApiRateLimit('SENSITIVE')
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiOperation({ summary: 'Cancel a pending intervention without releasing an active hold' })
+  async cancel(
+    @CurrentPrincipal() principal: AuthPrincipal,
+    @Param('interventionId', new ParseUUIDPipe()) interventionId: string,
+    @Headers('idempotency-key') header: string | undefined,
+    @Body() body: CancelInterventionDto,
+  ) {
+    const intervention = await this.interventions.cancel(principal, {
+      interventionId,
+      idempotencyKey: requireIdempotencyKey(header),
+      correlationId: this.requestContext.requireRequestId(),
+      reasonCode: body.reasonCode,
+    });
+    return { interventionId: intervention.id, status: intervention.status };
+  }
 
   @Post('interventions/:interventionId/verification-challenges')
   @UseGuards(AccessTokenGuard, RolesGuard, ApiRateLimitGuard)

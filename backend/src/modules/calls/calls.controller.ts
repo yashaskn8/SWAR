@@ -219,4 +219,51 @@ export class CallsController {
       nextCursor: page.nextCursor,
     };
   }
+
+  @Get(':callId')
+  @RequirePermissions('call.read')
+  @ApiRateLimit('QUERY')
+  @ApiOperation({ summary: 'Retrieve the current tenant-scoped call and security state' })
+  async current(
+    @CurrentPrincipal() principal: AuthPrincipal,
+    @Param('callId', new ParseUUIDPipe()) callId: string,
+  ) {
+    const result = await this.queries.current(principal, callId);
+    return {
+      ...callView(result.call),
+      participants: result.participants.map((participant) => ({
+        participantId: participant.id,
+        role: participant.role,
+        status: participant.status,
+      })),
+      risk: result.assessment
+        ? {
+            assessmentId: result.assessment.id,
+            state: result.assessment.effectiveState,
+            mode: result.assessment.decisionMode,
+            productionEligible: result.assessment.productionEligible,
+            activationSuppressed: result.assessment.activationSuppressed,
+            reasonCode: result.assessment.reasonCode,
+            occurredAt: result.assessment.occurredAt.toISOString(),
+          }
+        : null,
+      latestTransition: result.riskEvent
+        ? {
+            riskEventId: result.riskEvent.id,
+            state: result.riskEvent.state,
+            eventSequence: result.riskEvent.eventSequence.toString(),
+            mode: result.riskEvent.mode,
+            occurredAt: result.riskEvent.occurredAt.toISOString(),
+          }
+        : null,
+      activeInterventions: result.interventions.map((intervention) => ({
+        interventionId: intervention.id,
+        type: intervention.type,
+        status: intervention.status,
+        mode: intervention.mode,
+        reasonCode: intervention.reasonCode,
+        requiredAt: intervention.requiredAt.toISOString(),
+      })),
+    };
+  }
 }

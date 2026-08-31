@@ -214,6 +214,7 @@ enum InterventionType {
   HOLD_PROTECTED_ACTION
   REQUIRE_STEP_UP
   REQUIRE_CALLBACK
+  SUPERVISOR_ESCALATION
   END_CALL
 }
 
@@ -690,6 +691,10 @@ model EvidenceEvent {
   callId               String                   @db.Uuid
   analysisSessionId    String                   @db.Uuid
   trackBindingId       String                   @db.Uuid
+  participantIdentity  String?                  @db.VarChar(160)
+  trackSid             String?                  @db.VarChar(128)
+  windowId             String?                  @db.VarChar(200)
+  correlationId        String?                  @db.VarChar(128)
   modelVersionId       String?                  @db.Uuid
   supersedesEvidenceId String?                  @db.Uuid
   idempotencyKey       String                   @db.VarChar(128)
@@ -704,6 +709,9 @@ model EvidenceEvent {
   windowStartMs        BigInt
   windowEndMs          BigInt
   observedAt           DateTime                 @db.Timestamptz(6)
+  capturedAt           DateTime?                @db.Timestamptz(6)
+  inferenceStartedAt   DateTime?                @db.Timestamptz(6)
+  inferenceCompletedAt DateTime?                @db.Timestamptz(6)
   receivedAt           DateTime                 @default(now()) @db.Timestamptz(6)
   processingLatencyMs  Int?
   speechDurationMs     Int?
@@ -736,6 +744,7 @@ model EvidenceEvent {
   @@unique([organizationId, analysisSessionId, windowSequence, evidenceType, revision])
   @@index([organizationId, callId, observedAt])
   @@index([organizationId, analysisSessionId, windowSequence, acceptanceStatus])
+  @@index([organizationId, analysisSessionId, windowId])
   @@index([modelVersionId, observedAt])
 }
 
@@ -871,6 +880,9 @@ model Intervention {
   expiresAt                DateTime?           @db.Timestamptz(6)
   executionAttemptCount    Int                 @default(0)
   nextAttemptAt            DateTime?           @db.Timestamptz(6)
+  executionLeaseId         String?             @db.Uuid
+  executionLeaseExpiresAt  DateTime?           @db.Timestamptz(6)
+  deadLetteredAt           DateTime?           @db.Timestamptz(6)
   failureCode              String?             @db.VarChar(80)
   createdAt                DateTime            @default(now()) @db.Timestamptz(6)
   updatedAt                DateTime            @updatedAt @db.Timestamptz(6)
@@ -888,6 +900,7 @@ model Intervention {
   @@index([organizationId, callId, status])
   @@index([organizationId, status, requiredAt])
   @@index([organizationId, status, nextAttemptAt])
+  @@index([status, executionLeaseExpiresAt, nextAttemptAt])
 }
 
 model VerificationChallenge {

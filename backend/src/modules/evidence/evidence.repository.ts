@@ -23,6 +23,10 @@ export interface RecordEvidenceInput {
   callId: string;
   analysisSessionId: string;
   trackBindingId: string;
+  participantIdentity?: string;
+  trackSid?: string;
+  windowId?: string;
+  correlationId?: string;
   modelVersionId?: string;
   supersedesEvidenceId?: string;
   idempotencyKey: string;
@@ -37,6 +41,9 @@ export interface RecordEvidenceInput {
   windowStartMs: bigint;
   windowEndMs: bigint;
   observedAt: Date;
+  capturedAt?: Date;
+  inferenceStartedAt?: Date;
+  inferenceCompletedAt?: Date;
   processingLatencyMs?: number;
   speechDurationMs?: number;
   qualityScore?: number | string;
@@ -63,6 +70,10 @@ function isEquivalent(existing: EvidenceEvent, input: RecordEvidenceInput): bool
     existing.callId === input.callId &&
     existing.analysisSessionId === input.analysisSessionId &&
     existing.trackBindingId === input.trackBindingId &&
+    existing.participantIdentity === (input.participantIdentity ?? null) &&
+    existing.trackSid === (input.trackSid ?? null) &&
+    existing.windowId === (input.windowId ?? null) &&
+    existing.correlationId === (input.correlationId ?? null) &&
     existing.eventSequence === input.eventSequence &&
     existing.windowSequence === input.windowSequence &&
     existing.revision === input.revision &&
@@ -77,6 +88,9 @@ function isEquivalent(existing: EvidenceEvent, input: RecordEvidenceInput): bool
     existing.evidenceMode === input.evidenceMode &&
     existing.acceptanceStatus === (input.acceptanceStatus ?? EvidenceAcceptanceStatus.ACCEPTED) &&
     existing.observedAt.getTime() === input.observedAt.getTime() &&
+    existing.capturedAt?.getTime() === input.capturedAt?.getTime() &&
+    existing.inferenceStartedAt?.getTime() === input.inferenceStartedAt?.getTime() &&
+    existing.inferenceCompletedAt?.getTime() === input.inferenceCompletedAt?.getTime() &&
     existing.processingLatencyMs === (input.processingLatencyMs ?? null) &&
     existing.speechDurationMs === (input.speechDurationMs ?? null) &&
     decimal(existing.qualityScore) === decimal(input.qualityScore) &&
@@ -182,6 +196,18 @@ export class EvidenceRepository {
         callId: input.callId,
         analysisSessionId: input.analysisSessionId,
         trackBindingId: input.trackBindingId,
+        participantIdentity:
+          input.participantIdentity === undefined
+            ? null
+            : requireText(input.participantIdentity, 'participantIdentity', 160),
+        trackSid:
+          input.trackSid === undefined ? null : requireText(input.trackSid, 'trackSid', 128),
+        windowId:
+          input.windowId === undefined ? null : requireText(input.windowId, 'windowId', 200),
+        correlationId:
+          input.correlationId === undefined
+            ? null
+            : requireText(input.correlationId, 'correlationId', 128),
         modelVersionId:
           input.modelVersionId === undefined
             ? null
@@ -202,6 +228,9 @@ export class EvidenceRepository {
         windowStartMs: input.windowStartMs,
         windowEndMs: input.windowEndMs,
         observedAt: input.observedAt,
+        capturedAt: input.capturedAt ?? null,
+        inferenceStartedAt: input.inferenceStartedAt ?? null,
+        inferenceCompletedAt: input.inferenceCompletedAt ?? null,
         processingLatencyMs: input.processingLatencyMs ?? null,
         speechDurationMs: input.speechDurationMs ?? null,
         qualityScore: input.qualityScore ?? null,

@@ -9,7 +9,7 @@ export class DependencyProbeService {
 
   async probeMl(): Promise<boolean> {
     try {
-      const url = new URL('/health', this.configuration.values.dependencies.mlInternalUrl);
+      const url = new URL('/health/ready', this.configuration.values.dependencies.mlInternalUrl);
       const response = await fetch(url, {
         method: 'GET',
         headers: { accept: 'application/json' },

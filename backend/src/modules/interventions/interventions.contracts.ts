@@ -21,3 +21,7 @@ export class CompleteVerificationChallengeDto {
 export class ReleaseInterventionDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() verificationChallengeId!: string;
 }
+
+export class CancelInterventionDto {
+  @ApiProperty({ maxLength: 80 }) @IsString() @MaxLength(80) reasonCode!: string;
+}

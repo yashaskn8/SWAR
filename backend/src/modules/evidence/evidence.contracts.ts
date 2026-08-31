@@ -11,6 +11,7 @@ import {
   IsString,
   IsUUID,
   Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -30,8 +31,8 @@ export class MlEvidenceDto {
   eventType!: MlEvidenceEventType;
 
   @ApiProperty({ format: 'uuid' }) @IsUUID() eventId!: string;
-  @ApiProperty({ enum: ['1.0.0', '1.1.0'] })
-  @IsIn(['1.0.0', '1.1.0'])
+  @ApiProperty({ enum: ['1.0.0', '1.1.0', '2.0.0'] })
+  @IsIn(['1.0.0', '1.1.0', '2.0.0'])
   schemaVersion!: string;
   @ApiPropertyOptional({ enum: EvidenceMode })
   @IsOptional()
@@ -41,6 +42,10 @@ export class MlEvidenceDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() callId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() analysisSessionId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() trackBindingId!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(160) participantIdentity?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(128) trackSid?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) windowId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(128) correlationId?: string;
   @ApiProperty({ pattern: '^\\d+$' }) @Matches(/^\d+$/u) eventSequence!: string;
   @ApiProperty({ pattern: '^\\d+$' }) @Matches(/^\d+$/u) windowSequence!: string;
   @ApiProperty({ minimum: 0 }) @Type(() => Number) @IsInt() @Min(0) revision!: number;
@@ -48,6 +53,15 @@ export class MlEvidenceDto {
   @ApiProperty({ pattern: '^\\d+$' }) @Matches(/^\d+$/u) windowStartMs!: string;
   @ApiProperty({ pattern: '^\\d+$' }) @Matches(/^\d+$/u) windowEndMs!: string;
   @ApiProperty({ format: 'date-time' }) @IsDateString() observedAt!: string;
+  @ApiPropertyOptional({ format: 'date-time' }) @IsOptional() @IsDateString() capturedAt?: string;
+  @ApiPropertyOptional({ format: 'date-time' })
+  @IsOptional()
+  @IsDateString()
+  inferenceStartedAt?: string;
+  @ApiPropertyOptional({ format: 'date-time' })
+  @IsOptional()
+  @IsDateString()
+  inferenceCompletedAt?: string;
 
   @ApiPropertyOptional({ minimum: 0 })
   @IsOptional()
@@ -61,7 +75,13 @@ export class MlEvidenceDto {
   @IsInt()
   @Min(0)
   speechDurationMs?: number;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() qualityScore?: number;
+  @ApiPropertyOptional({ minimum: 0, maximum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ allowInfinity: false, allowNaN: false })
+  @Min(0)
+  @Max(1)
+  qualityScore?: number;
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
@@ -79,8 +99,18 @@ export class MlEvidenceDto {
   @IsOptional()
   @IsEnum(ScoreDirection)
   scoreDirection?: ScoreDirection;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() rawScore?: number;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() calibratedScore?: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ allowInfinity: false, allowNaN: false })
+  rawScore?: number;
+  @ApiPropertyOptional({ minimum: 0, maximum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ allowInfinity: false, allowNaN: false })
+  @Min(0)
+  @Max(1)
+  calibratedScore?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) calibrationVersion?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) errorCode?: string;
 }

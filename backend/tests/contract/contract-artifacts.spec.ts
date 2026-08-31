@@ -196,6 +196,44 @@ describe('Phase J machine-readable contracts', () => {
     ).toBe(false);
   });
 
+  it('requires exact participant/track lineage in the v2 evidence contract', async () => {
+    const schema = JSON.parse(
+      await readFile(resolve(contracts, 'schemas', 'ml-evidence.v2.json'), 'utf8'),
+    ) as object;
+    const ajv = new Ajv2020({
+      strict: false,
+      formats: { uuid: true, 'date-time': true },
+    });
+    const validate = ajv.compile(schema);
+    const event = {
+      eventType: 'PIPELINE_ERROR',
+      eventId: '018f0000-0000-7000-8000-000000000001',
+      schemaVersion: '2.0.0',
+      evidenceMode: 'SHADOW',
+      organizationId: '018f0000-0000-7000-8000-000000000002',
+      callId: '018f0000-0000-7000-8000-000000000003',
+      analysisSessionId: '018f0000-0000-7000-8000-000000000004',
+      trackBindingId: '018f0000-0000-7000-8000-000000000005',
+      participantIdentity: 'caller:authorized',
+      trackSid: 'TR_authorized',
+      windowId: '018f0000-0000-7000-8000-000000000004:1',
+      correlationId: '018f0000-0000-7000-8000-000000000001',
+      eventSequence: '1',
+      windowSequence: '1',
+      revision: 0,
+      evidenceType: 'PIPELINE_ERROR',
+      windowStartMs: '0',
+      windowEndMs: '0',
+      observedAt: '2030-01-01T00:00:00Z',
+      capturedAt: '2030-01-01T00:00:00Z',
+      errorCode: 'FIXTURE_PIPELINE_ERROR',
+    };
+    expect(validate(event)).toBe(true);
+    const missingTrack = { ...event } as Partial<typeof event>;
+    delete missingTrack.trackSid;
+    expect(validate(missingTrack)).toBe(false);
+  });
+
   it('does not expose tenant identifiers in outbound security-event payloads', async () => {
     const schema = await readFile(resolve(contracts, 'schemas', 'security-event.v1.json'), 'utf8');
     expect(schema).not.toContain('organizationId');

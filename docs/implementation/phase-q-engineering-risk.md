@@ -32,7 +32,12 @@ Authenticated, tenant- and track-bound evidence remains owned by the Phase P ing
 9. records one immutable, idempotent `RiskAssessment` plus exact evidence links and allow-listed audit metadata; and
 10. returns the assessment mode and production-suppression result with evidence acceptance.
 
-`SIMULATED`, `SHADOW`, and calibrated-looking evidence while the promotion chain is blocked can record only `ENGINEERING_TEST`, `SHADOW`, or `CALIBRATED_BLOCKED` assessments. Proposed intervention enums are architecture/test intent only. They do not create a `RiskEvent`, `Intervention`, `Alert`, WebSocket security event, warning, hold, block, escalation, or end-call action.
+`SHADOW` and calibrated-looking evidence while the promotion chain is blocked can record only
+`SHADOW` or `CALIBRATED_BLOCKED` assessments and cannot create an actionable intervention.
+Explicitly `SIMULATED` evidence may additionally drive a `DEMO`-tagged `RiskEvent`,
+`Intervention`, `Alert`, WebSocket demo event, and safe in-memory demo adapter. These rows and events
+are visibly non-production, and production adapters reject them. They demonstrate orchestration
+without creating a real warning, hold, block, escalation, or end-call side effect.
 
 ## Fail-closed production gate
 
@@ -54,10 +59,19 @@ Current committed configuration declares Phase O `BLOCKED`, Phase P `BLOCKED_BY_
 - `risk-policy.engineering-fixture.v1.json` is labelled `ENGINEERING_FIXTURE_NOT_CALIBRATED`; its numeric values are test inputs, not scientific thresholds or performance claims.
 - `ScoreTarget` records whether a model score is about the expected speaker, spoof, bona fide speech, or audio quality; existing records remain nullable and cannot be production eligible without it.
 - `RiskAssessment` and `RiskAssessmentEvidence` persist minimal decisions and provenance without raw audio, embeddings, tensors, call content, tokens, or checkpoint bytes.
-- `GET /api/v1/calls/{callId}/risk-assessments` uses the existing JWT/RBAC/tenant checks and exposes suppression/eligibility explicitly. Existing `/ws/security` authentication, call authorization, replay bounds, and tenant filtering are unchanged; suppressed assessments are not published there.
+- Current-call, assessment/history, active-alert, dashboard-summary, alert-acknowledgement, and
+  intervention-action REST operations use JWT/RBAC and repository tenant checks. `/ws/security`
+  authenticates and revalidates connections, authorizes each call subscription, bounds replay and
+  connections, isolates broken subscribers, and publishes only durable outbox records. Suppressed
+  shadow/calibrated-blocked assessments are not published there.
 
 ## Production-dependent work deliberately blocked
 
-The following Phase Q portion is not claimed complete: creating production `RiskEvent` transitions, transactional warning/hold/step-up records, external hold activation, and authenticated WebSocket delivery from live calibrated evidence. That work must be wired and tested only after genuine Phase O promotion, Phase P production promotion, approved Phase Q policy/threshold review, and an explicit Phase Q production activation decision.
+The following Phase Q portion is not claimed complete: activating production `RiskEvent`
+transitions, executing real warning/hold/step-up/supervisor providers, or publishing production
+security controls from live calibrated evidence. The transaction and adapter interfaces exist, but
+production paths remain fail-closed until genuine Phase O promotion, Phase P production promotion,
+approved Phase Q policy/threshold review, provider integration/security review, and an explicit
+Phase Q production activation decision.
 
 Phase R remains locked. Engineering Phase Q does not satisfy the backend-completion gate.

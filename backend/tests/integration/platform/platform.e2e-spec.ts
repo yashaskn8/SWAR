@@ -125,10 +125,18 @@ describe('Phase H platform integration', () => {
     expect(unavailable.body).toEqual({
       service: 'swar-backend',
       status: 'not_ready',
-      checks: { database: 'not_ready', ml: 'ready', livekit: 'ready' },
+      checks: {
+        database: 'not_ready',
+        ml: 'ready',
+        livekit: 'ready',
+        productionActivation: 'not_ready',
+      },
     });
-    const ready = await request(endpoint).get('/health/ready').expect(200);
-    expect(ready.body).toMatchObject({ status: 'ready' });
+    const blocked = await request(endpoint).get('/health/ready').expect(503);
+    expect(blocked.body).toMatchObject({
+      status: 'not_ready',
+      checks: { productionActivation: 'not_ready' },
+    });
   });
 
   it('rejects unknown DTO fields with the stable request-ID envelope', async () => {
