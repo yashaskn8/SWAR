@@ -4,3 +4,6 @@ This root is reserved for non-container repository automation. Phase C adds no w
 ## Project Overview
 ## Project Overview
 ## Installation
+## Contributors
+
+This project is being developed collaboratively.
